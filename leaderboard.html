@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leaderboard — YouKnowBall.io</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --red:   #FF1200;
+      --black: #0A0A0A;
+      --dark:  #1A1A1A;
+      --slate: #2E2E2E;
+      --ash:   #555;
+      --white: #F5F5F5;
+      --fd: 'Bebas Neue', sans-serif;
+      --fh: 'Barlow Condensed', sans-serif;
+      --fb: 'Barlow', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--fb);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--red);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-wm { font-family: var(--fd); font-size: 24px; letter-spacing: 2px; color: var(--white); text-decoration: none; }
+    .nav-play {
+      background: var(--black); color: var(--white);
+      font-family: var(--fd); font-size: 16px; letter-spacing: 3px;
+      padding: 9px 20px; border-radius: 8px; text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-play:hover { background: #111; }
+
+    /* HERO */
+    .lb-hero {
+      background: var(--dark);
+      border-bottom: 1px solid var(--slate);
+      padding: 32px 20px 28px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .lb-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
+    .lb-title { font-family: var(--fd); font-size: 52px; letter-spacing: 2px; color: var(--white); line-height: 0.95; }
+    .lb-sub { font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); margin-top: 10px; }
+
+    /* TABS */
+    .lb-tabs {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      border-bottom: 1px solid var(--slate);
+      background: var(--dark);
+    }
+    .lb-tab {
+      flex: 1; padding: 14px;
+      font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--ash); cursor: pointer; border: none; background: transparent;
+      border-bottom: 2px solid transparent; transition: all 0.15s; text-align: center;
+    }
+    .lb-tab.active { color: var(--white); border-bottom-color: var(--red); }
+
+    /* TABLE */
+    .lb-wrap { max-width: 640px; margin: 0 auto; padding: 0 0 60px; }
+
+    .lb-table-header {
+      display: grid;
+      grid-template-columns: 40px 1fr 80px 80px;
+      padding: 10px 20px;
+      font-size: 8px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--ash);
+      border-bottom: 1px solid var(--slate);
+    }
+
+    .lb-row {
+      display: grid;
+      grid-template-columns: 40px 1fr 80px 80px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #111;
+      align-items: center;
+      transition: background 0.1s;
+    }
+    .lb-row:hover { background: var(--dark); }
+    .lb-row.top-3 { background: rgba(255,18,0,0.04); }
+
+    .lb-rank {
+      font-family: var(--fd);
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: var(--ash);
+    }
+    .lb-rank.gold   { color: #FFD700; }
+    .lb-rank.silver { color: #C0C0C0; }
+    .lb-rank.bronze { color: #CD7F32; }
+
+    .lb-player { display: flex; flex-direction: column; gap: 2px; }
+    .lb-initials {
+      font-family: var(--fh);
+      font-size: 18px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--white);
+    }
+    .lb-state { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); }
+
+    .lb-score {
+      font-family: var(--fd);
+      font-size: 22px; letter-spacing: 1px;
+      color: var(--white); text-align: center;
+    }
+
+    .lb-tier {
+      font-size: 9px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; text-align: right;
+    }
+    .lb-tier.SAVANT   { color: #22c55e; }
+    .lb-tier.SCHOLAR  { color: #3b82f6; }
+    .lb-tier.FAN      { color: #f97316; }
+    .lb-tier.CASUAL   { color: #ef4444; }
+    .lb-tier.WATERBOY { color: #555; }
+
+    /* LOADING / EMPTY */
+    .lb-loading {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 4px;
+      text-transform: uppercase; color: #333;
+      animation: pulse 1.4s ease infinite;
+    }
+    @keyframes pulse { 0%,100%{ opacity:0.4 } 50%{ opacity:1 } }
+
+    .lb-empty {
+      text-align: center;
+      padding: 60px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .lb-empty-emoji { font-size: 40px; }
+    .lb-empty-title { font-family: var(--fd); font-size: 28px; letter-spacing: 2px; color: var(--white); }
+    .lb-empty-sub { font-size: 12px; color: var(--ash); }
+
+    /* DAY SELECTOR */
+    .lb-day-bar {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--slate);
+      background: var(--black);
+    }
+    .lb-day-label { font-size: 9px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--ash); }
+    .lb-day-val { font-family: var(--fd); font-size: 20px; letter-spacing: 2px; color: var(--red); }
+    .lb-day-nav { display: flex; gap: 8px; }
+    .lb-day-btn {
+      background: var(--dark); border: 1px solid var(--slate); border-radius: 6px;
+      padding: 6px 12px; color: var(--white); font-size: 14px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .lb-day-btn:hover { border-color: var(--red); }
+    .lb-day-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* COUNT BADGE */
+    .lb-count {
+      text-align: center;
+      padding: 10px;
+      font-size: 9px; font-weight: 700; letter-spacing: 4px;
+      text-transform: uppercase; color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-wm">YOUKNOWBALL.</a>
+  <a href="/game" class="nav-play">Play Today</a>
+</nav>
+
+<div class="lb-hero">
+  <div class="lb-eyebrow">Daily Rankings</div>
+  <div class="lb-title">LEADER<br>BOARD.</div>
+  <div class="lb-sub" id="lbSub">Loading...</div>
+</div>
+
+<div class="lb-tabs">
+  <button class="lb-tab active" onclick="setTab('today')">Today</button>
+  <button class="lb-tab" onclick="setTab('alltime')">All Time</button>
+</div>
+
+<div class="lb-day-bar" id="dayBar">
+  <div>
+    <div class="lb-day-label">Day</div>
+    <div class="lb-day-val" id="dayDisplay">#—</div>
+  </div>
+  <div class="lb-day-nav">
+    <button class="lb-day-btn" id="prevBtn" onclick="changeDay(-1)">←</button>
+    <button class="lb-day-btn" id="nextBtn" onclick="changeDay(1)" disabled>Today</button>
+  </div>
+</div>
+
+<div class="lb-wrap">
+  <div class="lb-table-header">
+    <div>#</div>
+    <div>Player</div>
+    <div style="text-align:center">Score</div>
+    <div style="text-align:right">Tier</div>
+  </div>
+  <div id="lbBody">
+    <div class="lb-loading">Loading scores...</div>
+  </div>
+  <div class="lb-count" id="lbCount"></div>
+</div>
+
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://qoxgmscwbtdcvztksjtx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
+  );
+
+  function getDayNum() {
+    return Math.floor((new Date() - new Date("2025-01-01")) / 86400000) + 1;
+  }
+
+  const todayNum = getDayNum();
+  let currentDay = todayNum;
+  let currentTab = 'today';
+
+  function setTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.lb-tab').forEach((t,i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'today') || (i === 1 && tab === 'alltime'));
+    });
+    document.getElementById('dayBar').style.display = tab === 'today' ? 'flex' : 'none';
+    loadScores();
+  }
+
+  function changeDay(dir) {
+    currentDay += dir;
+    if (currentDay > todayNum) currentDay = todayNum;
+    if (currentDay < 1) currentDay = 1;
+    document.getElementById('nextBtn').disabled = currentDay >= todayNum;
+    document.getElementById('prevBtn').disabled = currentDay <= 1;
+    loadScores();
+  }
+
+  function rankColor(i) {
+    if (i === 0) return 'gold';
+    if (i === 1) return 'silver';
+    if (i === 2) return 'bronze';
+    return '';
+  }
+
+  function rankSymbol(i) {
+    if (i === 0) return '🥇';
+    if (i === 1) return '🥈';
+    if (i === 2) return '🥉';
+    return i + 1;
+  }
+
+  async function loadScores() {
+    const body = document.getElementById('lbBody');
+    const sub = document.getElementById('lbSub');
+    const count = document.getElementById('lbCount');
+    body.innerHTML = '<div class="lb-loading">Loading...</div>';
+
+    try {
+      let query = sb.from('game_scores')
+        .select('initials, state, score, tier, day_number, game_date')
+        .order('score', { ascending: false })
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (currentTab === 'today') {
+        query = query.eq('day_number', currentDay);
+        document.getElementById('dayDisplay').textContent = `#${currentDay}`;
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        body.innerHTML = `
+          <div class="lb-empty">
+            <div class="lb-empty-emoji">🏈</div>
+            <div class="lb-empty-title">No Scores Yet.</div>
+            <div class="lb-empty-sub">Be the first on the board today.</div>
+          </div>`;
+        sub.textContent = currentTab === 'today' ? `Day #${currentDay} · No entries yet` : 'No entries yet';
+        count.textContent = '';
+        return;
+      }
+
+      sub.textContent = currentTab === 'today'
+        ? `Day #${currentDay} · ${data.length} ${data.length === 1 ? 'player' : 'players'}`
+        : `All time · ${data.length} scores`;
+      count.textContent = `${data.length} scores`;
+
+      body.innerHTML = data.map((row, i) => `
+        <div class="lb-row ${i < 3 ? 'top-3' : ''}">
+          <div class="lb-rank ${rankColor(i)}">${rankSymbol(i)}</div>
+          <div class="lb-player">
+            <div class="lb-initials">${row.initials}</div>
+            <div class="lb-state">${row.state || ''}</div>
+          </div>
+          <div class="lb-score">${row.score}/10</div>
+          <div class="lb-tier ${row.tier}">${row.tier}</div>
+        </div>
+      `).join('');
+
+    } catch(err) {
+      console.error(err);
+      body.innerHTML = '<div class="lb-empty"><div class="lb-empty-sub">Could not load scores. Try refreshing.</div></div>';
+    }
+  }
+
+  // Init
+  document.getElementById('prevBtn').disabled = currentDay <= 1;
+  loadScores();
+</script>
+</body>
+</html>

@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>YouKnowBall.io</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,600&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --red:   #FF1200;
+      --black: #0A0A0A;
+      --dark:  #1A1A1A;
+      --slate: #2E2E2E;
+      --ash:   #555;
+      --white: #F5F5F5;
+      --font-d: 'Bebas Neue', sans-serif;
+      --font-h: 'Barlow Condensed', sans-serif;
+      --font-b: 'Barlow', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      font-family: var(--font-b);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #root {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      background: var(--black);
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--red);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .wordmark {
+      font-family: var(--font-d);
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+    }
+
+    .header-day {
+      font-family: var(--font-d);
+      font-size: 20px;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.75);
+      line-height: 1;
+    }
+
+    .header-sub {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ── PROGRESS ── */
+    .progress {
+      background: var(--dark);
+      padding: 10px 20px;
+      display: flex;
+      gap: 5px;
+      border-bottom: 1px solid var(--slate);
+    }
+
+    .pip {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--slate);
+      transition: background 0.4s ease;
+    }
+
+    .pip.correct { background: var(--red); }
+    .pip.wrong   { background: #222; }
+    .pip.current { background: rgba(255,18,0,0.35); }
+
+    /* ── MAIN ── */
+    .main {
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      flex: 1;
+    }
+
+    /* ── COUNTER ── */
+    .counter {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .counter-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--ash);
+    }
+
+    .counter-num {
+      font-family: var(--font-d);
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--red);
+    }
+
+    /* ── PLAYER CARD ── */
+    .player-card {
+      background: var(--dark);
+      border: 1px solid var(--slate);
+      border-radius: 16px;
+      padding: 22px 22px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .player-card.flash-correct {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 1px #22c55e, 0 0 32px rgba(34,197,94,0.12);
+      animation: popCorrect 0.5s ease;
+    }
+
+    .player-card.flash-wrong {
+      border-color: var(--red);
+      box-shadow: 0 0 0 1px var(--red);
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes popCorrect {
+      0%,100% { transform: scale(1); }
+      40%     { transform: scale(1.015); }
+    }
+
+    @keyframes shake {
+      0%,100%{ transform:translateX(0)  }
+      20%    { transform:translateX(-7px) }
+      40%    { transform:translateX(7px)  }
+      60%    { transform:translateX(-4px) }
+      80%    { transform:translateX(4px)  }
+    }
+
+    .card-ghost-num {
+      position: absolute;
+      top: -16px;
+      right: -6px;
+      font-family: var(--font-d);
+      font-size: 130px;
+      color: rgba(255,18,0,0.05);
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .player-number {
+      font-family: var(--font-d);
+      font-size: 68px;
+      color: var(--red);
+      line-height: 1;
+    }
+
+    .player-name {
+      font-family: var(--font-h);
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--white);
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+      margin-top: 2px;
+    }
+
+    .player-pos {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--ash);
+      margin-top: 8px;
+    }
+
+    .player-question {
+      font-family: var(--font-d);
+      font-size: 15px;
+      letter-spacing: 4px;
+      color: rgba(255,255,255,0.2);
+      margin-top: 18px;
+      text-transform: uppercase;
+    }
+
+    /* ── HINTS ── */
+    .hints { display: flex; flex-direction: column; gap: 7px; }
+
+    .hint-item {
+      background: var(--dark);
+      border: 1px solid var(--slate);
+      border-radius: 10px;
+      padding: 11px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: hintIn 0.3s cubic-bezier(.16,1,.3,1) both;
+    }
+
+    @keyframes hintIn {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .hint-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--red);
+      min-width: 80px;
+    }
+
+    .hint-val {
+      font-family: var(--font-h);
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--white);
+    }
+
+    .hint-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed #333;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--ash);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .hint-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── INPUT ── */
+    .input-wrap { position: relative; }
+
+    .guess-input {
+      width: 100%;
+      background: var(--dark);
+      border: 1.5px solid var(--slate);
+      border-radius: 12px;
+      padding: 15px 18px;
+      font-family: var(--font-h);
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      caret-color: var(--red);
+    }
+
+    .guess-input::placeholder {
+      font-family: var(--font-b);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #3a3a3a;
+    }
+
+    .guess-input:focus { border-color: var(--red); }
+
+    .suggestions {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: #111;
+      border: 1px solid var(--slate);
+      border-radius: 12px;
+      overflow: hidden;
+      z-index: 50;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    }
+
+    .suggestion {
+      padding: 12px 18px;
+      font-family: var(--font-h);
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--white);
+      cursor: pointer;
+      border-bottom: 1px solid var(--slate);
+      transition: background 0.12s;
+    }
+
+    .suggestion:last-child { border-bottom: none; }
+    .suggestion:hover { background: rgba(255,18,0,0.12); color: var(--red); }
+
+    /* ── ACTIONS ── */
+    .actions { display: flex; gap: 10px; }
+
+    .btn-submit {
+      flex: 1;
+      background: var(--red);
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: var(--font-h);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--white);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-submit:hover { background: #e01000; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+
+
+
+    /* ── BETWEEN ── */
+    .between {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      gap: 20px;
+      animation: fadeUp 0.4s ease both;
+      flex: 1;
+    }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .between-card {
+      width: 100%;
+      background: var(--dark);
+      border: 1px solid var(--slate);
+      border-radius: 20px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .between-emoji { font-size: 52px; }
+
+    .between-tier {
+      font-family: var(--font-d);
+      font-size: 44px;
+      letter-spacing: 4px;
+      color: var(--white);
+    }
+
+    .between-college {
+      font-family: var(--font-h);
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .between-player {
+      font-size: 12px;
+      color: var(--ash);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .next-pulse {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--ash);
+      animation: pulse 1.2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 0.3; }
+      50%      { opacity: 1; }
+    }
+
+    /* ── RESULTS ── */
+    .results {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 24px 20px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .results-hero {
+      background: var(--red);
+      border-radius: 20px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .results-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg,  transparent, transparent 39px, rgba(255,255,255,0.035) 39px, rgba(255,255,255,0.035) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.035) 39px, rgba(255,255,255,0.035) 40px);
+    }
+
+    .results-day {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      position: relative;
+    }
+
+    .results-big-emoji { font-size: 52px; position: relative; }
+
+    .results-tier {
+      font-family: var(--font-d);
+      font-size: 52px;
+      letter-spacing: 5px;
+      color: var(--white);
+      position: relative;
+      line-height: 1;
+    }
+
+    .results-tagline {
+      font-size: 13px;
+      font-weight: 600;
+      font-style: italic;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.55);
+      position: relative;
+    }
+
+    .results-score {
+      font-family: var(--font-d);
+      font-size: 26px;
+      letter-spacing: 4px;
+      color: rgba(255,255,255,0.8);
+      position: relative;
+    }
+
+    .emoji-strip {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+    }
+
+    .emoji-strip span { font-size: 22px; }
+
+    .result-list { display: flex; flex-direction: column; gap: 3px; }
+
+    .result-row {
+      background: var(--dark);
+      border-radius: 10px;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .result-emj { font-size: 18px; min-width: 22px; text-align: center; }
+
+    .result-info { flex: 1; }
+
+    .result-name {
+      font-family: var(--font-h);
+      font-size: 15px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--white);
+      letter-spacing: 0.5px;
+    }
+
+    .result-college {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--ash);
+      margin-top: 2px;
+    }
+
+    .result-tier-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: right;
+    }
+
+    .btn-share {
+      width: 100%;
+      background: var(--red);
+      border: none;
+      border-radius: 12px;
+      padding: 18px;
+      font-family: var(--font-d);
+      font-size: 20px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--white);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-share:hover { background: #e01000; transform: translateY(-1px); }
+
+    .btn-leaderboard {
+      width: 100%;
+      background: transparent;
+      border: 1.5px solid var(--slate);
+      border-radius: 12px;
+      padding: 15px;
+      font-family: var(--font-d);
+      font-size: 20px;
+      letter-spacing: 4px;
+      color: var(--ash);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    .btn-leaderboard:hover { border-color: var(--white); color: var(--white); }
+
+    .midnight-note {
+      text-align: center;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #333;
+      padding-bottom: 20px;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.88);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from{ opacity:0 } to{ opacity:1 } }
+    .modal {
+      background: var(--dark);
+      border: 1px solid var(--slate);
+      border-radius: 24px 24px 0 0;
+      padding: 32px 24px 40px;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: slideUp 0.35s cubic-bezier(.16,1,.3,1);
+    }
+    @keyframes slideUp { from{ transform:translateY(60px); opacity:0 } to{ transform:translateY(0); opacity:1 } }
+    .modal-pill { width: 40px; height: 4px; background: var(--slate); border-radius: 2px; margin: 0 auto -8px; }
+    .modal-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; color: var(--red); }
+    .modal-title { font-family: var(--font-d); font-size: 34px; letter-spacing: 2px; color: var(--white); line-height: 1; }
+    .modal-sub { font-size: 13px; color: var(--ash); line-height: 1.6; margin-top: -8px; }
+    .modal-field { display: flex; flex-direction: column; gap: 7px; }
+    .modal-field-label { font-size: 9px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--ash); }
+    .modal-initials {
+      width: 100%; background: var(--black); border: 1.5px solid var(--slate);
+      border-radius: 10px; padding: 14px 18px;
+      font-family: var(--font-d); font-size: 36px; letter-spacing: 14px;
+      color: var(--white); outline: none; text-transform: uppercase;
+      caret-color: var(--red); transition: border-color 0.2s; text-align: center;
+    }
+    .modal-initials:focus { border-color: var(--red); }
+    .modal-select {
+      width: 100%; background: var(--black); border: 1.5px solid var(--slate);
+      border-radius: 10px; padding: 13px 16px;
+      font-family: var(--font-h); font-size: 17px; font-weight: 700;
+      color: var(--white); outline: none; -webkit-appearance: none; appearance: none;
+      transition: border-color 0.2s; cursor: pointer;
+    }
+    .modal-select:focus { border-color: var(--red); }
+    .modal-select option { background: #1a1a1a; }
+    .btn-modal-submit {
+      width: 100%; background: var(--red); border: none; border-radius: 12px;
+      padding: 17px; font-family: var(--font-d); font-size: 22px;
+      letter-spacing: 4px; color: var(--white); cursor: pointer; transition: all 0.2s;
+    }
+    .btn-modal-submit:hover { background: #CC0E00; }
+    .btn-modal-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-modal-skip {
+      background: transparent; border: none; padding: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; color: #444; cursor: pointer; text-align: center;
+    }
+    .btn-modal-skip:hover { color: var(--ash); }
+    .modal-success { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px 0; }
+    .modal-success-emoji { font-size: 52px; }
+    .modal-success-title { font-family: var(--font-d); font-size: 30px; letter-spacing: 2px; color: var(--white); }
+    .modal-success-sub { font-size: 13px; color: var(--ash); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<div id="modal-root"></div>
+
+<script>
+// ── SUPABASE ──────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(
+  'https://qoxgmscwbtdcvztksjtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
+);
+
+const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
+
+const PLAYERS = [
+  { id:1,  name:"Patrick Mahomes",   college:"Texas Tech",         position:"QB", team:"Kansas City Chiefs",   number:15, draft_round:1, conference:"Big 12",  state:"Texas" },
+  { id:2,  name:"Travis Kelce",      college:"Cincinnati",         position:"TE", team:"Kansas City Chiefs",   number:87, draft_round:3, conference:"AAC",     state:"Ohio" },
+  { id:3,  name:"Justin Jefferson",  college:"LSU",                position:"WR", team:"Minnesota Vikings",    number:18, draft_round:1, conference:"SEC",     state:"Louisiana" },
+  { id:4,  name:"Micah Parsons",     college:"Penn State",         position:"LB", team:"Dallas Cowboys",       number:11, draft_round:1, conference:"Big Ten", state:"Pennsylvania" },
+  { id:5,  name:"Ja'Marr Chase",     college:"LSU",                position:"WR", team:"Cincinnati Bengals",   number:1,  draft_round:1, conference:"SEC",     state:"Louisiana" },
+  { id:6,  name:"Josh Allen",        college:"Wyoming",            position:"QB", team:"Buffalo Bills",        number:17, draft_round:1, conference:"MWC",     state:"Wyoming" },
+  { id:7,  name:"Tyreek Hill",       college:"West Alabama",       position:"WR", team:"Miami Dolphins",       number:10, draft_round:5, conference:"GSC",     state:"Alabama" },
+  { id:8,  name:"Cooper Kupp",       college:"Eastern Washington", position:"WR", team:"Los Angeles Rams",     number:10, draft_round:3, conference:"Big Sky", state:"Washington" },
+  { id:9,  name:"Davante Adams",     college:"Fresno State",       position:"WR", team:"Las Vegas Raiders",    number:17, draft_round:2, conference:"MWC",     state:"California" },
+  { id:10, name:"Stefon Diggs",      college:"Maryland",           position:"WR", team:"Houston Texans",       number:14, draft_round:5, conference:"Big Ten", state:"Maryland" },
+];
+
+// ── DATA ────────────────────────────────────────────────
+const COLLEGES = [
+  "Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College",
+  "BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Washington",
+  "Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston",
+  "Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky",
+  "LSU","Louisville","Maryland","Miami","Michigan","Michigan State","Minnesota",
+  "Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State",
+  "Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss",
+  "Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU",
+  "South Carolina","Stanford","Syracuse","TCU","Tennessee","Texas","Texas A&M",
+  "Texas Tech","UCLA","USC","Utah","Vanderbilt","Virginia","Virginia Tech",
+  "Wake Forest","Washington","Washington State","West Alabama","West Virginia",
+  "Wisconsin","Wyoming",
+];
+
+const TIERS = [
+  { emoji:"🟩", name:"SAVANT",   color:"#22c55e", match:(h,c)=> c && h===0 },
+  { emoji:"🟦", name:"SCHOLAR",  color:"#3b82f6", match:(h,c)=> c && h===1 },
+  { emoji:"🟧", name:"STUDENT",  color:"#f97316", match:(h,c)=> c && h===2 },
+  { emoji:"🟥", name:"CASUAL",   color:"#ef4444", match:(h,c)=> c && h===3 },
+  { emoji:"⬛", name:"WATERBOY", color:"#555",    match:(h,c)=> !c || h>3  },
+];
+
+function getTier(hints, correct) {
+  return TIERS.find(t => t.match(hints, correct));
+}
+
+function getOverallTier(correct, total) {
+  const p = correct / total;
+  if (p >= 0.9) return { name:"SAVANT",   emoji:"🟩", line:"Sorry, I know ball." };
+  if (p >= 0.7) return { name:"SCHOLAR",  emoji:"🟦", line:"You know ball." };
+  if (p >= 0.5) return { name:"FAN",      emoji:"🟧", line:"You watch. You don't study." };
+  if (p >= 0.3) return { name:"CASUAL",   emoji:"🟥", line:"Stick to the highlights." };
+  return              { name:"WATERBOY", emoji:"⬛", line:"You do not know ball." };
+}
+
+function seededShuffle(arr, seed) {
+  const a = [...arr]; let s = seed;
+  for (let i = a.length-1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i+1);
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function getDaySeed() {
+  const d = new Date();
+  return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+}
+
+function getDayNum() {
+  return Math.floor((new Date() - new Date("2025-01-01")) / 86400000) + 1;
+}
+
+function ordinal(n) {
+  const s=["th","st","nd","rd"],v=n%100;
+  return n+(s[(v-20)%10]||s[v]||s[0]);
+}
+
+// ── STATE ────────────────────────────────────────────────
+const PLAYERS_PER_DAY = 10;
+const dayPlayers = seededShuffle(PLAYERS, getDaySeed()).slice(0, PLAYERS_PER_DAY);
+const dayNum = getDayNum();
+
+let state = {
+  idx: 0,
+  hints: 0,
+  guess: "",
+  results: [],
+  phase: "playing",  // playing | between | results
+  flash: null,       // correct | wrong | null
+  suggestions: [],
+};
+
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  const root = document.getElementById("root");
+  const { idx, hints, guess, results, phase, flash, suggestions } = state;
+
+  if (phase === "between") {
+    const last = results[results.length - 1];
+    root.innerHTML = `
+      <header class="header">
+        <div class="wordmark">YOUKNOWBALL.</div>
+        <div class="header-right">
+          <div class="header-day">#${dayNum}</div>
+          <div class="header-sub">Daily Challenge</div>
+        </div>
+      </header>
+      <div class="progress">${renderPips()}</div>
+      <div class="between">
+        <div class="between-card">
+          <div class="between-emoji">${last.tier.emoji}</div>
+          <div class="between-tier">${last.tier.name}</div>
+          <div class="between-college" style="color:${last.correct ? '#22c55e' : '#ef4444'}">${last.player.college}</div>
+          <div class="between-player">${last.player.name} · ${last.player.position}</div>
+        </div>
+        <div class="next-pulse">Next player loading...</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (phase === "results") {
+    const correct = results.filter(r => r.correct).length;
+    const overall = getOverallTier(correct, PLAYERS_PER_DAY);
+    root.innerHTML = `
+      <header class="header">
+        <div class="wordmark">YOUKNOWBALL.</div>
+        <div class="header-right">
+          <div class="header-day">#${dayNum}</div>
+          <div class="header-sub">Complete</div>
+        </div>
+      </header>
+      <div class="progress">${renderPips()}</div>
+      <div class="results">
+        <div class="results-hero">
+          <div class="results-day">YouKnowBall.io · Day #${dayNum}</div>
+          <div class="results-big-emoji">${overall.emoji}</div>
+          <div class="results-tier">${overall.name}</div>
+          <div class="results-tagline">"${overall.line}"</div>
+          <div class="results-score">${correct}/${PLAYERS_PER_DAY} Correct</div>
+          <div class="emoji-strip">${results.map(r => `<span>${r.tier.emoji}</span>`).join("")}</div>
+        </div>
+
+        <div class="result-list">
+          ${results.map(r => `
+            <div class="result-row">
+              <div class="result-emj">${r.tier.emoji}</div>
+              <div class="result-info">
+                <div class="result-name">${r.player.name}</div>
+                <div class="result-college">${r.player.college}</div>
+              </div>
+              <div class="result-tier-badge" style="color:${r.tier.color}">${r.tier.name}</div>
+            </div>
+          `).join("")}
+        </div>
+
+        <button class="btn-share" id="shareBtn">Share</button>
+        <a href="/leaderboard" class="btn-leaderboard">Leaderboard</a>
+        <div class="midnight-note">New players every day at midnight</div>
+      </div>
+    `;
+
+    document.getElementById("shareBtn").addEventListener("click", handleShare);
+    // Auto-trigger leaderboard modal after short delay
+    setTimeout(() => showModal(correct, overall), 600);
+    return;
+  }
+
+  // ── PLAYING ──
+  const player = dayPlayers[idx];
+  const cardClass = `player-card${flash === "correct" ? " flash-correct" : flash === "wrong" ? " flash-wrong" : ""}`;
+  const hintDefs = [
+    { label: "Draft Round", value: `Round ${player.draft_round}` },
+    { label: "Conference",  value: player.conference },
+    { label: "State",       value: player.state },
+  ];
+
+  root.innerHTML = `
+    <header class="header">
+      <div class="wordmark">YOUKNOWBALL.</div>
+      <div class="header-right">
+        <div class="header-day">#${dayNum}</div>
+        <div class="header-sub">Daily Challenge</div>
+      </div>
+    </header>
+
+    <div class="progress">${renderPips()}</div>
+
+    <div class="main">
+      <div class="counter">
+        <div class="counter-label">Player</div>
+        <div class="counter-num">${ordinal(idx + 1)}</div>
+        <div class="counter-label">of ${PLAYERS_PER_DAY}</div>
+      </div>
+
+      <div class="${cardClass}" id="playerCard">
+        <div class="card-ghost-num">${player.number}</div>
+        <div class="player-number">#${player.number}</div>
+        <div class="player-name">${player.name}</div>
+        <div class="player-pos">${player.position} · ${player.team}</div>
+
+      </div>
+
+      <div class="hints" id="hintsArea">
+        ${Array.from({length: hints}).map((_,i) => `
+          <div class="hint-item" style="animation-delay:${i*0.05}s">
+            <div class="hint-label">${hintDefs[i].label}</div>
+            <div class="hint-val">${hintDefs[i].value}</div>
+          </div>
+        `).join("")}
+        ${hints < 3 ? `
+          <button class="hint-btn" id="hintBtn">
+            <span style="font-size:14px; color:var(--red)">+</span>
+            <span>Reveal hint · ${3 - hints} remaining</span>
+          </button>
+        ` : ""}
+      </div>
+
+      <div class="input-wrap">
+        <input
+          class="guess-input"
+          id="guessInput"
+          value="${guess.replace(/"/g, '&quot;')}"
+          placeholder="Type a college..."
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        ${suggestions.length > 0 ? `
+          <div class="suggestions" id="suggList">
+            ${suggestions.map(s => `<div class="suggestion" data-val="${s}">${s}</div>`).join("")}
+          </div>
+        ` : ""}
+      </div>
+
+      <div class="actions">
+        <button class="btn-submit" id="submitBtn">Submit</button>
+      </div>
+    </div>
+  `;
+
+  // ── EVENT LISTENERS ──
+  const input = document.getElementById("guessInput");
+  if (input) {
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    input.addEventListener("input", e => {
+      state.guess = e.target.value;
+      updateSuggestions(e.target.value);
+    });
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") submitGuess();
+    });
+  }
+
+  document.getElementById("submitBtn")?.addEventListener("click", submitGuess);
+  document.getElementById("hintBtn")?.addEventListener("click", () => {
+    if (state.hints < 3) { state.hints++; render(); }
+  });
+
+  document.querySelectorAll(".suggestion").forEach(el => {
+    el.addEventListener("mousedown", e => {
+      e.preventDefault();
+      const val = el.dataset.val;
+      state.guess = val;
+      state.suggestions = [];
+      submitGuess(val);
+    });
+  });
+}
+
+function renderPips() {
+  return dayPlayers.map((_, i) => {
+    let cls = "";
+    if (i < state.results.length) cls = state.results[i].correct ? "correct" : "wrong";
+    else if (i === state.idx) cls = "current";
+    return `<div class="pip ${cls}"></div>`;
+  }).join("");
+}
+
+function updateSuggestions(val) {
+  if (val.length < 2) { state.suggestions = []; render(); return; }
+  const q = val.toLowerCase();
+  state.suggestions = COLLEGES.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  render();
+}
+
+function submitGuess(override) {
+  const val = (override || state.guess).trim().toLowerCase();
+  const player = dayPlayers[state.idx];
+  const correct =
+    player.college.toLowerCase() === val ||
+    player.college.toLowerCase().includes(val) ||
+    val.includes(player.college.toLowerCase().split(" ")[0]);
+
+  state.suggestions = [];
+
+  if (correct) {
+    const tier = getTier(state.hints, true);
+    state.flash = "correct";
+    render();
+    setTimeout(() => {
+      state.flash = null;
+      state.results.push({ player, correct: true, hintsUsed: state.hints, tier });
+      if (state.idx + 1 >= PLAYERS_PER_DAY) {
+        state.phase = "results";
+        render();
+      } else {
+        state.phase = "between";
+        render();
+        setTimeout(() => {
+          state.idx++;
+          state.hints = 0;
+          state.guess = "";
+          state.phase = "playing";
+          render();
+        }, 2200);
+      }
+    }, 500);
+  } else {
+    state.flash = "wrong";
+    render();
+    setTimeout(() => { state.flash = null; render(); }, 400);
+  }
+}
+
+function skipPlayer() {
+  const player = dayPlayers[state.idx];
+  const tier = getTier(state.hints, false);
+  state.results.push({ player, correct: false, hintsUsed: state.hints, tier });
+  state.suggestions = [];
+  if (state.idx + 1 >= PLAYERS_PER_DAY) {
+    state.phase = "results";
+    render();
+  } else {
+    state.phase = "between";
+    render();
+    setTimeout(() => {
+      state.idx++;
+      state.hints = 0;
+      state.guess = "";
+      state.phase = "playing";
+      render();
+    }, 2200);
+  }
+}
+
+async function handleShare() {
+  const correct = state.results.filter(r => r.correct).length;
+  const emojis = state.results.map(r => r.tier.emoji).join(" ");
+  const text = `Sorry, I know ball.\n🏈 YouKnowBall.io · Day #${dayNum}\n${correct}/${PLAYERS_PER_DAY} correct\n${emojis}\nyouknowball.io`;
+  const btn = document.getElementById("shareBtn");
+  if (navigator.share) {
+    await navigator.share({ text });
+  } else {
+    await navigator.clipboard.writeText(text);
+    if (btn) { btn.textContent = "Copied ✓"; setTimeout(() => { btn.textContent = "Share"; }, 2000); }
+  }
+}
+
+
+// ── MODAL ────────────────────────────────────────────────
+function showModal(correct, overall) {
+  // Don't show if already submitted today
+  const today = new Date().toISOString().split('T')[0];
+  if (localStorage.getItem('ykb_submitted') === today) return;
+
+  const modalRoot = document.getElementById('modal-root');
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-pill"></div>
+        <div class="modal-eyebrow">Post Your Score</div>
+        <div class="modal-title">Hit The Board.</div>
+        <div class="modal-sub">Enter your initials and state to appear on the YouKnowBall leaderboard.</div>
+        <div class="modal-field">
+          <div class="modal-field-label">Your Initials</div>
+          <input class="modal-initials" id="modalInitials" maxlength="3" placeholder="YKB" autocomplete="off" autocorrect="off"/>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">Your State</div>
+          <select class="modal-select" id="modalState">
+            <option value="">Select a state...</option>
+            ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn-modal-submit" id="modalSubmit" disabled>Submit Score</button>
+        <button class="btn-modal-skip" id="modalSkip">Skip — maybe next time</button>
+      </div>
+    </div>
+  `;
+
+  const initialsInput = document.getElementById('modalInitials');
+  const stateSelect = document.getElementById('modalState');
+  const submitBtn = document.getElementById('modalSubmit');
+
+  function checkReady() {
+    submitBtn.disabled = initialsInput.value.trim().length < 2 || !stateSelect.value;
+  }
+
+  initialsInput.addEventListener('input', checkReady);
+  stateSelect.addEventListener('change', checkReady);
+
+  submitBtn.addEventListener('click', async () => {
+    const initials = initialsInput.value.trim().toUpperCase();
+    const state = stateSelect.value;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Posting...';
+    await submitScore(initials, state, correct, overall);
+  });
+
+  document.getElementById('modalSkip').addEventListener('click', () => {
+    modalRoot.innerHTML = '';
+  });
+
+  document.getElementById('modalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'modalOverlay') modalRoot.innerHTML = '';
+  });
+}
+
+async function submitScore(initials, userState, correct, overall) {
+  const today = new Date().toISOString().split('T')[0];
+  const emojis = state.results.map(r => r.tier.emoji).join('');
+
+  try {
+    const { error } = await sb.from('game_scores').insert({
+      initials: initials,
+      state: userState,
+      score: correct,
+      tier: overall.name,
+      day_number: dayNum,
+      game_date: today,
+      emoji_string: emojis
+    });
+
+    if (error) throw error;
+
+    localStorage.setItem('ykb_submitted', today);
+
+    document.getElementById('modal-root').innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal-pill"></div>
+          <div class="modal-success">
+            <div class="modal-success-emoji">🟩</div>
+            <div class="modal-success-title">You're On The Board.</div>
+            <div class="modal-success-sub">${initials} · ${userState}<br>Score posted to the YouKnowBall leaderboard.</div>
+            <a href="/leaderboard" style="margin-top:8px; background:var(--red); color:var(--white); font-family:var(--font-d); font-size:18px; letter-spacing:3px; padding:14px 32px; border-radius:10px; text-decoration:none; display:inline-block;">View Leaderboard</a>
+            <button onclick="document.getElementById('modal-root').innerHTML=''" style="background:transparent;border:none;color:#444;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:-8px;">Close</button>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch(err) {
+    console.error('Supabase error:', err);
+    document.getElementById('modal-root').innerHTML = '';
+  }
+}
+
+render();
+</script>
+</body>
+</html>
