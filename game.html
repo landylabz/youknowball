@@ -669,8 +669,7 @@ const sb = createClient(
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-const PLAYERS = [
-  { id:1,  name:"Patrick Mahomes",   college:"Texas Tech",         position:"QB", team:"Kansas City Chiefs",   number:15, draft_round:1, conference:"Big 12",  state:"Texas" },
+const PLAYERS_FALLBACK = [   college:"Texas Tech",         position:"QB", team:"Kansas City Chiefs",   number:15, draft_round:1, conference:"Big 12",  state:"Texas" },
   { id:2,  name:"Travis Kelce",      college:"Cincinnati",         position:"TE", team:"Kansas City Chiefs",   number:87, draft_round:3, conference:"AAC",     state:"Ohio" },
   { id:3,  name:"Justin Jefferson",  college:"LSU",                position:"WR", team:"Minnesota Vikings",    number:18, draft_round:1, conference:"SEC",     state:"Louisiana" },
   { id:4,  name:"Micah Parsons",     college:"Penn State",         position:"LB", team:"Dallas Cowboys",       number:11, draft_round:1, conference:"Big Ten", state:"Pennsylvania" },
@@ -745,23 +744,78 @@ function ordinal(n) {
 
 // ── STATE ────────────────────────────────────────────────
 const PLAYERS_PER_DAY = 10;
-const dayPlayers = seededShuffle(PLAYERS, getDaySeed()).slice(0, PLAYERS_PER_DAY);
 const dayNum = getDayNum();
+const daySeed = getDaySeed();
+
+let dayPlayers = [];
 
 let state = {
   idx: 0,
   hints: 0,
   guess: "",
   results: [],
-  phase: "playing",  // playing | between | results
-  flash: null,       // correct | wrong | null
+  phase: "loading",
+  flash: null,
   suggestions: [],
 };
+
+// ── INIT — fetch from Supabase ────────────────────────────
+async function init() {
+  try {
+    const { data, error } = await sb
+      .from('players')
+      .select('name, college, position, nfl_team, conference, difficulty_tier, rating, jersey_number, draft_round, state');
+
+    if (error) throw error;
+
+    // Split into tiers
+    const tier1 = data.filter(p => p.difficulty_tier === '1');
+    const tier2 = data.filter(p => p.difficulty_tier === '2');
+    const tier3 = data.filter(p => p.difficulty_tier === '3');
+
+    // Seeded shuffle each tier
+    const s1 = seededShuffle(tier1, daySeed);
+    const s2 = seededShuffle(tier2, daySeed + 1);
+    const s3 = seededShuffle(tier3, daySeed + 2);
+
+    // Pick with difficulty ramp: 4 easy, 4 medium, 2 hard
+    dayPlayers = [
+      ...s1.slice(0, 4),
+      ...s2.slice(0, 4),
+      ...s3.slice(0, 2),
+    ];
+
+  } catch(err) {
+    console.error('Failed to load players:', err);
+    // Fallback to hardcoded if Supabase fails
+    dayPlayers = seededShuffle(PLAYERS_FALLBACK, daySeed).slice(0, PLAYERS_PER_DAY);
+  }
+
+  state.phase = "playing";
+  render();
+}
 
 // ── RENDER ────────────────────────────────────────────────
 function render() {
   const root = document.getElementById("root");
   const { idx, hints, guess, results, phase, flash, suggestions } = state;
+
+  if (phase === "loading") {
+    root.innerHTML = `
+      <header class="header">
+        <div class="wordmark">YOUKNOWBALL.</div>
+        <div class="header-right">
+          <div class="header-day">#${dayNum}</div>
+          <div class="header-sub">Daily Challenge</div>
+        </div>
+      </header>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+        <div style="font-family:var(--font-d);font-size:28px;letter-spacing:4px;color:var(--red);animation:pulse 1.2s ease infinite;">LOADING...</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#333;">Fetching today's players</div>
+      </div>
+    `;
+    return;
+  }
 
   if (phase === "between") {
     const last = results[results.length - 1];
@@ -823,7 +877,7 @@ function render() {
         </div>
 
         <button class="btn-share" id="shareBtn">Share</button>
-        <a href="/leaderboard.html" class="btn-leaderboard">Leaderboard</a>
+        <a href="/leaderboard" class="btn-leaderboard">Leaderboard</a>
         <div class="midnight-note">New players every day at midnight</div>
       </div>
     `;
@@ -862,10 +916,10 @@ function render() {
       </div>
 
       <div class="${cardClass}" id="playerCard">
-        <div class="card-ghost-num">${player.number}</div>
-        <div class="player-number">#${player.number}</div>
+        <div class="card-ghost-num">${player.jersey_number}</div>
+        <div class="player-number">#${player.jersey_number}</div>
         <div class="player-name">${player.name}</div>
-        <div class="player-pos">${player.position} · ${player.team}</div>
+        <div class="player-pos">${player.position} · ${player.nfl_team}</div>
 
       </div>
 
@@ -1121,11 +1175,13 @@ async function submitScore(initials, userState, correct, overall) {
     `;
   } catch(err) {
     console.error('Supabase error:', err);
-    document.getElementById('modal-root').innerHTML = '';
+    // Show error message so user knows something went wrong
+    document.getElementById('modalSubmit').textContent = 'Error — Try Again';
+    document.getElementById('modalSubmit').disabled = false;
   }
 }
 
-render();
+init();
 </script>
 </body>
 </html>
