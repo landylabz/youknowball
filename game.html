@@ -823,7 +823,7 @@ function render() {
         </div>
 
         <button class="btn-share" id="shareBtn">Share</button>
-        <a href="/leaderboard" class="btn-leaderboard">Leaderboard</a>
+        <a href="/leaderboard.html" class="btn-leaderboard">Leaderboard</a>
         <div class="midnight-note">New players every day at midnight</div>
       </div>
     `;
@@ -1113,7 +1113,7 @@ async function submitScore(initials, userState, correct, overall) {
             <div class="modal-success-emoji">🟩</div>
             <div class="modal-success-title">You're On The Board.</div>
             <div class="modal-success-sub">${initials} · ${userState}<br>Score posted to the YouKnowBall leaderboard.</div>
-            <a href="/leaderboard" style="margin-top:8px; background:var(--red); color:var(--white); font-family:var(--font-d); font-size:18px; letter-spacing:3px; padding:14px 32px; border-radius:10px; text-decoration:none; display:inline-block;">View Leaderboard</a>
+            <a href="/leaderboard.html" style="margin-top:8px; background:var(--red); color:var(--white); font-family:var(--font-d); font-size:18px; letter-spacing:3px; padding:14px 32px; border-radius:10px; text-decoration:none; display:inline-block;">View Leaderboard</a>
             <button onclick="document.getElementById('modal-root').innerHTML=''" style="background:transparent;border:none;color:#444;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:-8px;">Close</button>
           </div>
         </div>
