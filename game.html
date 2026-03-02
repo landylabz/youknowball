@@ -482,7 +482,7 @@ async function submitScore(initials, userState, correct, overall) {
   try {
     const { error } = await sb.from('game_scores').insert({
       initials, state: userState, score: correct,
-      tier: overall.name, day_number: dayNum, game_date: today, emoji_string: emojis
+      tier: overall.name, hints_used: results.reduce((a,r) => a + (r.hintsUsed||0), 0), day_number: dayNum, game_date: today, emoji_string: emojis
     });
     if (error) throw error;
     localStorage.setItem('ykb_submitted', today);
@@ -510,6 +510,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 

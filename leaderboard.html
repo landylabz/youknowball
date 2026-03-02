@@ -125,10 +125,11 @@
       font-size: 9px; font-weight: 700; letter-spacing: 2px;
       text-transform: uppercase; text-align: right;
     }
-    .lb-tier.YOUKNOWBALL        { color: #FFD700; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
-    .lb-tier.STUDENT-OF-THE-GAME { color: #3b82f6; }
-    .lb-tier.ARM-CHAIR-EXPERT   { color: #f97316; }
-    .lb-tier.CASUAL             { color: #a855f7; }
+    .lb-tier { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-align: right; }
+    .lb-tier[data-tier="YOUKNOWBALL"]        { color: #FFD700; text-shadow: 0 0 8px rgba(255,215,0,0.6); }
+    .lb-tier[data-tier="STUDENT OF THE GAME"] { color: #3b82f6; }
+    .lb-tier[data-tier="ARM CHAIR EXPERT"]   { color: #f97316; }
+    .lb-tier[data-tier="CASUAL"]             { color: #a855f7; }
 
     /* LOADING / EMPTY */
     .lb-loading {
@@ -269,6 +270,14 @@
     return i + 1;
   }
 
+  function calcTier(score, hintsUsed) {
+    const wrong = 10 - score;
+    if (score === 10 && !hintsUsed) return 'YOUKNOWBALL';
+    if (wrong <= 2) return 'STUDENT OF THE GAME';
+    if (wrong <= 5) return 'ARM CHAIR EXPERT';
+    return 'CASUAL';
+  }
+
   async function loadScores() {
     const body = document.getElementById('lbBody');
     const sub = document.getElementById('lbSub');
@@ -277,7 +286,7 @@
 
     try {
       let query = sb.from('game_scores')
-        .select('initials, state, score, tier, day_number, game_date')
+        .select('initials, state, score, tier, hints_used, day_number, game_date')
         .order('score', { ascending: false })
         .order('created_at', { ascending: true })
         .limit(100);
@@ -315,7 +324,7 @@
             <div class="lb-state">${row.state || ''}</div>
           </div>
           <div class="lb-score">${row.score}/10</div>
-          <div class="lb-tier ${row.tier}">${row.tier}</div>
+          <div class="lb-tier" data-tier="${calcTier(row.score, row.hints_used)}">${calcTier(row.score, row.hints_used)}</div>
         </div>
       `).join('');
 
