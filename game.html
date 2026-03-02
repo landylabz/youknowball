@@ -669,8 +669,7 @@ const sb = createClient(
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-const PLAYERS_FALLBACK = [
-  { id:1,  name:"Patrick Mahomes",   college:"Texas Tech",         position:"QB", team:"Kansas City Chiefs",   number:15, draft_round:1, conference:"Big 12",  state:"Texas" },
+const PLAYERS_FALLBACK = [   college:"Texas Tech",         position:"QB", team:"Kansas City Chiefs",   number:15, draft_round:1, conference:"Big 12",  state:"Texas" },
   { id:2,  name:"Travis Kelce",      college:"Cincinnati",         position:"TE", team:"Kansas City Chiefs",   number:87, draft_round:3, conference:"AAC",     state:"Ohio" },
   { id:3,  name:"Justin Jefferson",  college:"LSU",                position:"WR", team:"Minnesota Vikings",    number:18, draft_round:1, conference:"SEC",     state:"Louisiana" },
   { id:4,  name:"Micah Parsons",     college:"Penn State",         position:"LB", team:"Dallas Cowboys",       number:11, draft_round:1, conference:"Big Ten", state:"Pennsylvania" },
@@ -779,7 +778,12 @@ async function init() {
     const s2 = seededShuffle(tier2, daySeed + 1);
     const s3 = seededShuffle(tier3, daySeed + 2);
 
-    const pool = [...s1.slice(0,4), ...s2.slice(0,4), ...s3.slice(0,2)];`n    if (pool.length < 10) { const all = seededShuffle([...tier1,...tier2,...tier3], daySeed); for (const p of all) { if (!pool.find(x => x.name === p.name)) pool.push(p); if (pool.length >= 10) break; } }`n    dayPlayers = pool.slice(0, 10);
+    // Pick with difficulty ramp: 4 easy, 4 medium, 2 hard
+    dayPlayers = [
+      ...s1.slice(0, 4),
+      ...s2.slice(0, 4),
+      ...s3.slice(0, 2),
+    ];
 
   } catch(err) {
     console.error('Failed to load players:', err);
@@ -888,9 +892,9 @@ function render() {
   const player = dayPlayers[idx];
   const cardClass = `player-card${flash === "correct" ? " flash-correct" : flash === "wrong" ? " flash-wrong" : ""}`;
   const hintDefs = [
-    { label: "Draft Round", value: player.draft_round ? `Round ${player.draft_round}` : "Undrafted" },
-    { label: "Conference",  value: player.conference || "Unknown" },
-    { label: "State",       value: player.state || "Unknown" },
+    { label: "Draft Round", value: `Round ${player.draft_round}` },
+    { label: "Conference",  value: player.conference },
+    { label: "State",       value: player.state },
   ];
 
   root.innerHTML = `
@@ -1181,9 +1185,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
