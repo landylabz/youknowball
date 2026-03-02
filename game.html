@@ -122,7 +122,7 @@ const sb = createClient(
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
+const COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
 const TIERS = [
   { emoji:"\u2705",   name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
@@ -135,13 +135,13 @@ const TIERS = [
 
 function getTier(hints, correct) { return TIERS.find(t => t.match(hints, correct)); }
 
-function getOverallTier(correct, total) {
-  const p = correct / total;
-  if (p >= 0.9) return { name:"SAVANT",   emoji:"🟩", line:"Sorry, I know ball." };
-  if (p >= 0.7) return { name:"SCHOLAR",  emoji:"🟦", line:"You know ball." };
-  if (p >= 0.5) return { name:"FAN",      emoji:"🟧", line:"You watch. You don't study." };
-  if (p >= 0.3) return { name:"CASUAL",   emoji:"🟥", line:"Stick to the highlights." };
-  return              { name:"WATERBOY", emoji:"⬛", line:"You do not know ball." };
+function getOverallTier(correct, total, results) {
+  const wrong = total - correct;
+  const totalHints = results ? results.reduce((a, r) => a + (r.hintsUsed || 0), 0) : 0;
+  if (correct === total && totalHints === 0) return { name:"YOUKNOWBALL",        color:"gold",    glow:"#FFD700", line:"Perfect game. Zero hints. You know ball.", gradient:true };
+  if (wrong <= 2)                            return { name:"STUDENT OF THE GAME", color:"#3b82f6", glow:"#3b82f6", line:"Sharp. Real ones know ball.",             gradient:false };
+  if (wrong <= 5)                            return { name:"ARM CHAIR EXPERT",    color:"#f97316", glow:"#f97316", line:"You watch. You know enough.",             gradient:false };
+  return                                            { name:"CASUAL",              color:"#a855f7", glow:"#a855f7", line:"Touch grass. Watch more film.",           gradient:false };
 }
 
 function seededShuffle(arr, seed) {
@@ -200,7 +200,7 @@ async function init() {
     dayPlayers = pool.slice(0, 10);
   } catch(err) {
     console.error('Failed to load players:', err);
-    dayPlayers = [];
+    dayPlayers = seededShuffle(data || [], daySeed).slice(0, 10);
   }
   state.phase = "playing";
   render();
@@ -245,7 +245,10 @@ function render() {
 
   if (phase === "results") {
     const correct = results.filter(r => r.correct).length;
-    const overall = getOverallTier(correct, PLAYERS_PER_DAY);
+    const overall = getOverallTier(correct, PLAYERS_PER_DAY, results);
+    const tierStyle = overall.gradient
+      ? `background: linear-gradient(135deg, #FFD700, #FFF8A0, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 12px rgba(255,215,0,0.6));`
+      : `color: ${overall.color}; text-shadow: 0 0 20px ${overall.glow}44;`;
     root.innerHTML = `
       <header class="header">
         <div class="wordmark">YOUKNOWBALL.</div>
@@ -255,8 +258,7 @@ function render() {
       <div class="results">
         <div class="results-hero">
           <div class="results-day">YouKnowBall.io · Day #${dayNum}</div>
-          <div class="results-big-emoji">${overall.emoji}</div>
-          <div class="results-tier">${overall.name}</div>
+          <div class="results-tier" style="${tierStyle}">${overall.name}</div>
           <div class="results-tagline">"${overall.line}"</div>
           <div class="results-score">${correct}/${PLAYERS_PER_DAY} Correct</div>
           <div class="emoji-strip">${results.map(r => `<span>${r.tier.emoji}</span>`).join("")}</div>
@@ -512,5 +514,3 @@ init();
 </script>
 </body>
 </html>
-
-
