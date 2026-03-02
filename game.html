@@ -779,8 +779,7 @@ async function init() {
     const s2 = seededShuffle(tier2, daySeed + 1);
     const s3 = seededShuffle(tier3, daySeed + 2);
 
-    // Pick with difficulty ramp: 4 easy, 4 medium, 2 hard
-    dayPlayers = pool.slice(0, 10);
+    const pool = [...s1.slice(0,4), ...s2.slice(0,4), ...s3.slice(0,2)];`n    if (pool.length < 10) { const all = seededShuffle([...tier1,...tier2,...tier3], daySeed); for (const p of all) { if (!pool.find(x => x.name === p.name)) pool.push(p); if (pool.length >= 10) break; } }`n    dayPlayers = pool.slice(0, 10);
 
   } catch(err) {
     console.error('Failed to load players:', err);
@@ -1182,6 +1181,8 @@ init();
 </script>
 </body>
 </html>
+
+
 
 
 
