@@ -748,7 +748,7 @@ const PLAYERS_PER_DAY = 10;
 const dayNum = getDayNum();
 const daySeed = getDaySeed();
 
-let dayPlayers = data ? seededShuffle(data, daySeed).slice(0, 10) : seededShuffle(PLAYERS_FALLBACK, daySeed).slice(0, 10);
+let dayPlayers = seededShuffle(data, daySeed).slice(0, 10);
 
 let state = {
   idx: 0,
@@ -780,7 +780,7 @@ async function init() {
     const s3 = seededShuffle(tier3, daySeed + 2);
 
     // Pick with difficulty ramp: 4 easy, 4 medium, 2 hard
-    dayPlayers = data ? seededShuffle(data, daySeed).slice(0, 10) : seededShuffle(PLAYERS_FALLBACK, daySeed).slice(0, 10);
+    dayPlayers = seededShuffle(data, daySeed).slice(0, 10);
 
   } catch(err) {
     console.error('Failed to load players:', err);
@@ -1182,4 +1182,5 @@ init();
 </script>
 </body>
 </html>
+
 
