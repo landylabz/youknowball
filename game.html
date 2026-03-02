@@ -485,7 +485,7 @@ async function submitScore(initials, userState, correct, overall) {
       tier: overall.name, hints_used: results.reduce((a,r) => a + (r.hintsUsed||0), 0), day_number: dayNum, game_date: today, emoji_string: emojis
     });
     if (error) throw error;
-    localStorage.setItem('ykb_submitted', today);
+    try { localStorage.setItem('ykb_submitted', today); } catch(e) {}
     document.getElementById('modal-root').innerHTML = `
       <div class="modal-overlay">
         <div class="modal">
@@ -510,6 +510,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 

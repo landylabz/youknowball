@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Streaker — YouKnowBall.io</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,600&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --red:#FF1200; --black:#0A0A0A; --dark:#1A1A1A; --slate:#2E2E2E; --ash:#555; --white:#F5F5F5;
+      --font-d:'Bebas Neue',sans-serif; --font-h:'Barlow Condensed',sans-serif; --font-b:'Barlow',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--black);min-height:100vh;display:flex;justify-content:center;font-family:var(--font-b);-webkit-font-smoothing:antialiased}
+    #root{width:100%;max-width:480px;min-height:100vh;background:var(--black);color:var(--white);display:flex;flex-direction:column;position:relative}
+
+    /* HEADER */
+    .header{background:var(--red);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .wordmark{font-family:var(--font-d);font-size:22px;letter-spacing:2px;color:var(--white);line-height:1;text-decoration:none}
+    .header-mode{font-family:var(--font-d);font-size:20px;letter-spacing:2px;color:rgba(255,255,255,.75)}
+    .header-right{display:flex;align-items:center;gap:12px}
+    .btn-rules{background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:6px 10px;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--white);cursor:pointer}
+
+    /* TIMER BAR */
+    .timer-wrap{background:var(--dark);border-bottom:1px solid var(--slate);padding:0}
+    .timer-bar{height:5px;background:var(--red);transition:width 1s linear;width:100%}
+    .timer-bar.warning{background:#f97316}
+    .timer-bar.danger{background:#ef4444;animation:timerPulse .5s ease infinite}
+    @keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .timer-label{padding:6px 20px 8px;display:flex;justify-content:space-between;align-items:center}
+    .timer-num{font-family:var(--font-d);font-size:22px;letter-spacing:2px;color:var(--white)}
+    .timer-num.warning{color:#f97316}
+    .timer-num.danger{color:#ef4444}
+
+    /* HINT INVENTORY */
+    .hint-inventory{padding:8px 20px;background:var(--dark);border-bottom:1px solid var(--slate);display:flex;align-items:center;gap:10px}
+    .hint-inv-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash)}
+    .hint-slots{display:flex;gap:6px}
+    .hint-slot{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--slate);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .3s}
+    .hint-slot.full{border-color:var(--red);background:rgba(255,18,0,.1)}
+    .hint-slot.empty{opacity:.3}
+
+    /* STREAK */
+    .streak-wrap{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between}
+    .streak-label{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
+    .streak-num{font-family:var(--font-d);font-size:52px;color:var(--red);line-height:1}
+    .streak-tier-badge{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid var(--slate);color:var(--ash)}
+
+    /* PLAYER CARD */
+    .main{padding:16px 20px;display:flex;flex-direction:column;gap:16px;flex:1}
+    .player-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;padding:22px 22px 20px;position:relative;overflow:hidden;transition:border-color .25s,box-shadow .25s}
+    .player-card.flash-correct{border-color:#22c55e;box-shadow:0 0 0 1px #22c55e,0 0 32px rgba(34,197,94,.12);animation:popCorrect .5s ease}
+    .player-card.flash-wrong{border-color:var(--red);box-shadow:0 0 0 1px var(--red);animation:shake .35s ease}
+    @keyframes popCorrect{0%,100%{transform:scale(1)}40%{transform:scale(1.015)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+    .card-ghost-num{position:absolute;top:-16px;right:-6px;font-family:var(--font-d);font-size:130px;color:rgba(255,18,0,.05);line-height:1;pointer-events:none;user-select:none}
+    .player-number{font-family:var(--font-d);font-size:68px;color:var(--red);line-height:1}
+    .player-name{font-family:var(--font-h);font-size:28px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px;line-height:1.1;margin-top:2px}
+    .player-pos{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-top:8px}
+
+    /* HINT AREA */
+    .hint-revealed{background:var(--dark);border:1px solid var(--red);border-radius:10px;padding:11px 16px;display:flex;align-items:center;gap:12px;animation:hintIn .3s cubic-bezier(.16,1,.3,1)}
+    @keyframes hintIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .hint-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--red);min-width:80px}
+    .hint-val{font-family:var(--font-h);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
+    .btn-use-hint{width:100%;background:transparent;border:1px dashed #333;border-radius:10px;padding:12px 16px;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-use-hint:hover{border-color:var(--red);color:var(--red)}
+    .btn-use-hint:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
+
+    /* INPUT */
+    .input-wrap{position:relative}
+    .guess-input{width:100%;background:var(--dark);border:1.5px solid var(--slate);border-radius:12px;padding:15px 18px;font-family:var(--font-h);font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--white);outline:none;transition:border-color .2s;-webkit-appearance:none;caret-color:var(--red)}
+    .guess-input:focus{border-color:var(--red)}
+    .guess-input::placeholder{color:#333;font-size:16px;text-transform:none;font-family:var(--font-b);font-weight:500;letter-spacing:0}
+    .suggestions{position:absolute;top:100%;left:0;right:0;background:#111;border:1px solid var(--slate);border-radius:12px;overflow:hidden;z-index:50;margin-top:4px}
+    .suggestion{padding:12px 18px;font-family:var(--font-h);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--white);cursor:pointer;border-bottom:1px solid var(--slate);transition:background .1s}
+    .suggestion:last-child{border-bottom:none}
+    .suggestion:hover{background:rgba(255,18,0,.1);color:var(--red)}
+    .actions{display:flex;gap:10px}
+    .btn-submit{flex:1;background:var(--red);border:none;border-radius:12px;padding:17px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
+    .btn-submit:hover{background:#CC0E00;transform:translateY(-1px)}
+
+    /* UNLOCK ANNOUNCEMENT */
+    .unlock-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease}
+    .unlock-card{background:var(--dark);border:1px solid var(--red);border-radius:24px;padding:48px 32px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;max-width:340px;width:90%;animation:scaleIn .4s cubic-bezier(.16,1,.3,1)}
+    @keyframes scaleIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+    .unlock-icon{font-size:52px}
+    .unlock-eyebrow{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--red)}
+    .unlock-title{font-family:var(--font-d);font-size:42px;letter-spacing:3px;color:var(--white);line-height:1}
+    .unlock-sub{font-size:13px;color:var(--ash);line-height:1.6}
+    .unlock-inventory{display:flex;gap:8px;justify-content:center;margin:4px 0}
+    .btn-unlock-continue{width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;margin-top:8px}
+
+    /* RULES SCREEN */
+    .rules-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.95);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
+    .rules-sheet{background:var(--dark);border:1px solid var(--slate);border-radius:24px 24px 0 0;padding:32px 24px 48px;width:100%;max-width:480px;animation:slideUp .35s cubic-bezier(.16,1,.3,1)}
+    @keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .rules-pill{width:40px;height:4px;background:var(--slate);border-radius:2px;margin:0 auto 24px}
+    .rules-eyebrow{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--red);margin-bottom:8px}
+    .rules-title{font-family:var(--font-d);font-size:42px;letter-spacing:2px;color:var(--white);line-height:1;margin-bottom:24px}
+    .rule-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)}
+    .rule-item:last-of-type{border-bottom:none}
+    .rule-icon{font-size:22px;min-width:28px;text-align:center;margin-top:2px}
+    .rule-text{flex:1}
+    .rule-title{font-family:var(--font-h);font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px}
+    .rule-desc{font-size:12px;color:var(--ash);line-height:1.5}
+    .btn-start{width:100%;background:var(--red);border:none;border-radius:12px;padding:18px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;margin-top:24px;transition:all .2s}
+
+    /* TIER TRANSITION */
+    .tier-transition{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;animation:fadeIn .15s ease}
+    .tier-card{background:var(--dark);border:1px solid var(--slate);border-radius:24px;padding:40px 32px;text-align:center;max-width:320px;width:90%;animation:scaleIn .35s cubic-bezier(.16,1,.3,1)}
+    .tier-eyebrow{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--ash);margin-bottom:8px}
+    .tier-name{font-family:var(--font-d);font-size:38px;letter-spacing:3px;margin-bottom:8px}
+    .tier-desc{font-size:12px;color:var(--ash);line-height:1.5}
+
+    /* GAME OVER */
+    .gameover{display:flex;flex-direction:column;gap:18px;padding:24px 20px;animation:fadeUp .5s ease both;flex:1}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .gameover-hero{background:var(--red);border-radius:20px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;overflow:hidden}
+    .gameover-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.035) 39px,rgba(255,255,255,.035) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.035) 39px,rgba(255,255,255,.035) 40px)}
+    .gameover-label{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.4);position:relative}
+    .gameover-streak{font-family:var(--font-d);font-size:96px;color:var(--white);line-height:1;position:relative}
+    .gameover-sub{font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.5);position:relative}
+    .gameover-last{background:var(--dark);border:1px solid var(--slate);border-radius:14px;padding:16px 18px}
+    .gameover-last-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash);margin-bottom:8px}
+    .gameover-last-name{font-family:var(--font-h);font-size:20px;font-weight:900;text-transform:uppercase;color:var(--white)}
+    .gameover-last-college{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-top:4px}
+    .btn-play-again{width:100%;background:var(--red);border:none;border-radius:12px;padding:18px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .15s}
+    .btn-play-again:hover{background:#e01000;transform:translateY(-1px)}
+    .btn-leaderboard{width:100%;background:transparent;border:1.5px solid var(--slate);border-radius:12px;padding:15px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--ash);cursor:pointer;transition:all .2s;text-decoration:none;display:block;text-align:center}
+    .btn-leaderboard:hover{border-color:var(--white);color:var(--white)}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.88);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
+    .modal{background:var(--dark);border:1px solid var(--slate);border-radius:24px 24px 0 0;padding:32px 24px 40px;width:100%;max-width:480px;display:flex;flex-direction:column;gap:20px;animation:slideUp .35s cubic-bezier(.16,1,.3,1)}
+    .modal-pill{width:40px;height:4px;background:var(--slate);border-radius:2px;margin:0 auto -8px}
+    .modal-eyebrow{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--red)}
+    .modal-title{font-family:var(--font-d);font-size:34px;letter-spacing:2px;color:var(--white);line-height:1}
+    .modal-sub{font-size:13px;color:var(--ash);line-height:1.6;margin-top:-8px}
+    .modal-field{display:flex;flex-direction:column;gap:7px}
+    .modal-field-label{font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
+    .modal-initials{width:100%;background:var(--black);border:1.5px solid var(--slate);border-radius:10px;padding:14px 18px;font-family:var(--font-d);font-size:36px;letter-spacing:14px;color:var(--white);outline:none;text-transform:uppercase;caret-color:var(--red);transition:border-color .2s;text-align:center}
+    .modal-initials:focus{border-color:var(--red)}
+    .modal-select{width:100%;background:var(--black);border:1.5px solid var(--slate);border-radius:10px;padding:13px 16px;font-family:var(--font-h);font-size:17px;font-weight:700;color:var(--white);outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;cursor:pointer}
+    .modal-select:focus{border-color:var(--red)}
+    .modal-select option{background:#1a1a1a}
+    .btn-modal-submit{width:100%;background:var(--red);border:none;border-radius:12px;padding:17px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
+    .btn-modal-submit:hover{background:#CC0E00}
+    .btn-modal-submit:disabled{opacity:.45;cursor:not-allowed}
+    .btn-modal-skip{background:transparent;border:none;padding:4px;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#444;cursor:pointer;text-align:center}
+    .btn-modal-skip:hover{color:var(--ash)}
+
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<div id="overlay-root"></div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://qoxgmscwbtdcvztksjtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
+);
+
+const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
+
+let COLLEGES = [];
+
+// Hint unlock thresholds — earn a hint when you REACH these streaks
+const HINT_UNLOCK_AT = [5, 10, 15, 20, 25];
+const MAX_HINTS = 2;
+const TIMER_SECONDS = 60;
+
+// Difficulty tiers by streak
+function getDifficultyTier(streak) {
+  if (streak <= 5)  return 'easy';   // Tier 1 only
+  if (streak <= 10) return 'medium'; // Tier 1+2
+  return 'hard';                     // All tiers
+}
+
+function getDifficultyLabel(streak) {
+  if (streak <= 5)  return { name: 'WARM UP', color: '#22c55e' };
+  if (streak <= 10) return { name: 'HEATING UP', color: '#f97316' };
+  return { name: 'ON FIRE', color: '#ef4444' };
+}
+
+// ── STATE ─────────────────────────────────────────────────
+let allPlayers = [];
+let seenIds = new Set();
+let timerInterval = null;
+
+let state = {
+  phase: 'loading',   // loading | rules | playing | unlock | gameover
+  streak: 0,
+  hintInventory: 0,
+  hintUsedThisRound: false,
+  currentPlayer: null,
+  guess: '',
+  suggestions: [],
+  flash: null,
+  timeLeft: TIMER_SECONDS,
+  lastWrongPlayer: null,
+  pendingUnlock: false,
+};
+
+// ── INIT ──────────────────────────────────────────────────
+async function init() {
+  try {
+    const { data, error } = await sb
+      .from('players')
+      .select('id, name, college, position, nfl_team, conference, difficulty_tier, jersey_number');
+    if (error) throw error;
+    allPlayers = data;
+    const cols = await sb.from('players').select('college');
+    if (cols.data) COLLEGES = [...new Set(cols.data.map(p => p.college))].sort();
+  } catch(err) {
+    console.error('Failed to load:', err);
+  }
+  const hasSeenRules = localStorage.getItem('ykb_streaker_rules');
+  state.phase = hasSeenRules ? 'playing' : 'rules';
+  if (state.phase === 'playing') startRound();
+  render();
+}
+
+// ── GAME LOGIC ────────────────────────────────────────────
+function getNextPlayer() {
+  const tier = getDifficultyTier(state.streak + 1);
+  let pool;
+  if (tier === 'easy')   pool = allPlayers.filter(p => p.difficulty_tier === '1');
+  if (tier === 'medium') pool = allPlayers.filter(p => ['1','2'].includes(p.difficulty_tier));
+  if (tier === 'hard')   pool = allPlayers;
+  const available = pool.filter(p => !seenIds.has(p.id));
+  if (!available.length) { seenIds.clear(); return pool[Math.floor(Math.random() * pool.length)]; }
+  return available[Math.floor(Math.random() * available.length)];
+}
+
+function startRound() {
+  clearInterval(timerInterval);
+  state.currentPlayer = getNextPlayer();
+  if (state.currentPlayer) seenIds.add(state.currentPlayer.id);
+  state.guess = '';
+  state.suggestions = [];
+  state.flash = null;
+  state.hintUsedThisRound = false;
+  state.timeLeft = TIMER_SECONDS;
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    state.timeLeft--;
+    if (state.timeLeft <= 0) {
+      clearInterval(timerInterval);
+      timeOut();
+    }
+    renderTimerOnly();
+  }, 1000);
+}
+
+function renderTimerOnly() {
+  const bar = document.getElementById('timerBar');
+  const num = document.getElementById('timerNum');
+  if (!bar || !num) return;
+  const pct = (state.timeLeft / TIMER_SECONDS) * 100;
+  bar.style.width = pct + '%';
+  const cls = state.timeLeft <= 10 ? 'danger' : state.timeLeft <= 20 ? 'warning' : '';
+  bar.className = 'timer-bar ' + cls;
+  num.textContent = state.timeLeft + 's';
+  num.className = 'timer-num ' + cls;
+}
+
+function timeOut() {
+  state.lastWrongPlayer = state.currentPlayer;
+  state.phase = 'gameover';
+  render();
+}
+
+function checkHintUnlock() {
+  if (HINT_UNLOCK_AT.includes(state.streak) && state.hintInventory < MAX_HINTS) {
+    state.hintInventory = Math.min(state.hintInventory + 1, MAX_HINTS);
+    state.pendingUnlock = true;
+  }
+}
+
+function submitGuess(override) {
+  const val = (override || state.guess).trim().toLowerCase();
+  if (!val) return;
+  const player = state.currentPlayer;
+  if (!player) return;
+
+  const correct =
+    player.college.toLowerCase() === val ||
+    player.college.toLowerCase().includes(val) ||
+    val.includes(player.college.toLowerCase().split(' ')[0]);
+
+  state.suggestions = [];
+
+  if (correct) {
+    clearInterval(timerInterval);
+    state.flash = 'correct';
+    state.streak++;
+    checkHintUnlock();
+    render();
+    setTimeout(() => {
+      state.flash = null;
+      if (state.pendingUnlock) {
+        state.pendingUnlock = false;
+        state.phase = 'unlock';
+        render();
+      } else {
+        startRound();
+        render();
+      }
+    }, 600);
+  } else {
+    state.flash = 'wrong';
+    render();
+    setTimeout(() => {
+      state.flash = null;
+      render();
+    }, 400);
+  }
+}
+
+function useHint() {
+  if (state.hintInventory <= 0 || state.hintUsedThisRound) return;
+  state.hintInventory--;
+  state.hintUsedThisRound = true;
+  render();
+}
+
+function updateSuggestions(val) {
+  if (val.length < 2) { state.suggestions = []; render(); return; }
+  const q = val.toLowerCase();
+  state.suggestions = COLLEGES.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  render();
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  const root = document.getElementById('root');
+  const overlayRoot = document.getElementById('overlay-root');
+
+  if (state.phase === 'loading') {
+    root.innerHTML = `
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;min-height:100vh">
+        <div style="font-family:var(--font-d);font-size:28px;letter-spacing:4px;color:var(--red);animation:pulse 1.2s ease infinite">LOADING...</div>
+      </div>`;
+    return;
+  }
+
+  if (state.phase === 'gameover') {
+    clearInterval(timerInterval);
+    root.innerHTML = `
+      <header class="header">
+        <a href="/game.html" class="wordmark">YOUKNOWBALL.</a>
+        <div class="header-mode">STREAKER</div>
+      </header>
+      <div class="gameover">
+        <div class="gameover-hero">
+          <div class="gameover-label">Streak Ended</div>
+          <div class="gameover-streak">${state.streak}</div>
+          <div class="gameover-sub">${state.streak === 1 ? '1 player' : state.streak + ' players'} in a row</div>
+        </div>
+        ${state.lastWrongPlayer ? `
+        <div class="gameover-last">
+          <div class="gameover-last-label">Got you on</div>
+          <div class="gameover-last-name">${state.lastWrongPlayer.name}</div>
+          <div class="gameover-last-college">${state.lastWrongPlayer.college}</div>
+        </div>` : ''}
+        <button class="btn-play-again" id="playAgainBtn">Play Again</button>
+        <a href="/leaderboard.html" class="btn-leaderboard">Leaderboard</a>
+      </div>`;
+    document.getElementById('playAgainBtn')?.addEventListener('click', () => {
+      seenIds.clear();
+      state = { phase: 'playing', streak: 0, hintInventory: 0, hintUsedThisRound: false, currentPlayer: null, guess: '', suggestions: [], flash: null, timeLeft: TIMER_SECONDS, lastWrongPlayer: null, pendingUnlock: false };
+      startRound();
+      render();
+    });
+    overlayRoot.innerHTML = '';
+    setTimeout(() => showScoreModal(), 800);
+    return;
+  }
+
+  if (state.phase === 'playing') {
+    const player = state.currentPlayer;
+    if (!player) return;
+    const diffLabel = getDifficultyLabel(state.streak + 1);
+    const cardClass = `player-card${state.flash === 'correct' ? ' flash-correct' : state.flash === 'wrong' ? ' flash-wrong' : ''}`;
+    const pct = (state.timeLeft / TIMER_SECONDS) * 100;
+    const timerCls = state.timeLeft <= 10 ? 'danger' : state.timeLeft <= 20 ? 'warning' : '';
+
+    root.innerHTML = `
+      <header class="header">
+        <a href="/game.html" class="wordmark">YOUKNOWBALL.</a>
+        <div class="header-right">
+          <div class="header-mode">STREAKER</div>
+          <button class="btn-rules" id="rulesBtn">?</button>
+        </div>
+      </header>
+      <div class="timer-wrap">
+        <div class="timer-bar ${timerCls}" id="timerBar" style="width:${pct}%"></div>
+        <div class="timer-label">
+          <div style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash)">Time Left</div>
+          <div class="timer-num ${timerCls}" id="timerNum">${state.timeLeft}s</div>
+        </div>
+      </div>
+      <div class="hint-inventory">
+        <div class="hint-inv-label">Hints</div>
+        <div class="hint-slots">
+          <div class="hint-slot ${state.hintInventory >= 1 ? 'full' : 'empty'}">\uD83D\uDFE5</div>
+          <div class="hint-slot ${state.hintInventory >= 2 ? 'full' : 'empty'}">\uD83D\uDFE5</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="streak-tier-badge" style="border-color:${diffLabel.color};color:${diffLabel.color}">${diffLabel.name}</div>
+      </div>
+      <div class="streak-wrap">
+        <div>
+          <div class="streak-label">Streak</div>
+          <div class="streak-num">${state.streak}</div>
+        </div>
+      </div>
+      <div class="main">
+        <div class="${cardClass}" id="playerCard">
+          <div class="card-ghost-num">${player.jersey_number || ''}</div>
+          <div class="player-number">#${player.jersey_number || '—'}</div>
+          <div class="player-name">${player.name}</div>
+          <div class="player-pos">${player.position} · ${player.nfl_team}</div>
+        </div>
+        ${state.hintUsedThisRound ? `
+          <div class="hint-revealed">
+            <div class="hint-label">Conference</div>
+            <div class="hint-val">${player.conference || 'N/A'}</div>
+          </div>` : `
+          <button class="btn-use-hint" id="hintBtn" ${state.hintInventory === 0 ? 'disabled' : ''}>
+            <span style="font-size:14px;color:${state.hintInventory > 0 ? 'var(--red)' : '#555'}">+</span>
+            <span>${state.hintInventory > 0 ? 'Use Hint (' + state.hintInventory + ' available)' : 'No hints — earn one at streak ' + (HINT_UNLOCK_AT.find(n => n > state.streak) || '?')}</span>
+          </button>`}
+        <div class="input-wrap">
+          <input class="guess-input" id="guessInput" value="${state.guess.replace(/"/g,'&quot;')}"
+            placeholder="Type a college..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+          ${state.suggestions.length > 0 ? `
+            <div class="suggestions" id="suggList">
+              ${state.suggestions.map(s => `<div class="suggestion" data-val="${s}">${s}</div>`).join('')}
+            </div>` : ''}
+        </div>
+        <div class="actions">
+          <button class="btn-submit" id="submitBtn">Submit</button>
+        </div>
+      </div>`;
+
+    document.getElementById('rulesBtn')?.addEventListener('click', () => {
+      state.phase = 'rules';
+      clearInterval(timerInterval);
+      render();
+    });
+    document.getElementById('hintBtn')?.addEventListener('click', useHint);
+    document.getElementById('submitBtn')?.addEventListener('click', () => submitGuess());
+
+    const input = document.getElementById('guessInput');
+    if (input) {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+      input.addEventListener('input', e => { state.guess = e.target.value; updateSuggestions(e.target.value); });
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(); });
+    }
+    document.querySelectorAll('.suggestion').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        state.guess = el.dataset.val;
+        state.suggestions = [];
+        submitGuess(el.dataset.val);
+      });
+    });
+    return;
+  }
+
+  if (state.phase === 'unlock') {
+    clearInterval(timerInterval);
+    overlayRoot.innerHTML = `
+      <div class="unlock-overlay">
+        <div class="unlock-card">
+          <div class="unlock-icon">\uD83D\uDD25</div>
+          <div class="unlock-eyebrow">Streak ${state.streak} Reached</div>
+          <div class="unlock-title">Hint Unlocked</div>
+          <div class="unlock-sub">You earned a hint. Use it wisely — you can hold up to 2 at a time.</div>
+          <div class="unlock-inventory">
+            <div class="hint-slot ${state.hintInventory >= 1 ? 'full' : 'empty'}">\uD83D\uDFE5</div>
+            <div class="hint-slot ${state.hintInventory >= 2 ? 'full' : 'empty'}">\uD83D\uDFE5</div>
+          </div>
+          <button class="btn-unlock-continue" id="unlockContinueBtn">Keep Going</button>
+        </div>
+      </div>`;
+    document.getElementById('unlockContinueBtn')?.addEventListener('click', () => {
+      overlayRoot.innerHTML = '';
+      state.phase = 'playing';
+      startRound();
+      render();
+    });
+    return;
+  }
+
+  if (state.phase === 'rules') {
+    overlayRoot.innerHTML = `
+      <div class="rules-overlay">
+        <div class="rules-sheet">
+          <div class="rules-pill"></div>
+          <div class="rules-eyebrow">How To Play</div>
+          <div class="rules-title">Streaker.</div>
+          <div class="rule-item">
+            <div class="rule-icon">\uD83C\uDFC6</div>
+            <div class="rule-text">
+              <div class="rule-title">Build Your Streak</div>
+              <div class="rule-desc">Guess which college each NFL player attended. Get it right — streak grows. Get it wrong — game over.</div>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">\u23F1\uFE0F</div>
+            <div class="rule-text">
+              <div class="rule-title">60 Seconds Per Player</div>
+              <div class="rule-desc">You have one minute to answer. Run out of time — game over. No pressure.</div>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">\uD83D\uDFE5</div>
+            <div class="rule-text">
+              <div class="rule-title">Earn Hints</div>
+              <div class="rule-desc">Hit streaks of 5, 10, 15... and you earn a hint. Hints reveal the player's conference. Hold up to 2 at a time — use them any round.</div>
+            </div>
+          </div>
+          <div class="rule-item">
+            <div class="rule-icon">\uD83D\uDD25</div>
+            <div class="rule-text">
+              <div class="rule-title">Gets Harder</div>
+              <div class="rule-desc">Players get tougher as your streak climbs. Stars early, deeper cuts later.</div>
+            </div>
+          </div>
+          <button class="btn-start" id="startBtn">Let's Go</button>
+        </div>
+      </div>`;
+    document.getElementById('startBtn')?.addEventListener('click', () => {
+      localStorage.setItem('ykb_streaker_rules', '1');
+      overlayRoot.innerHTML = '';
+      state.phase = 'playing';
+      startRound();
+      render();
+    });
+  }
+}
+
+// ── SCORE MODAL ───────────────────────────────────────────
+function showScoreModal() {
+  if (state.streak === 0) return;
+  const overlayRoot = document.getElementById('overlay-root');
+  overlayRoot.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-pill"></div>
+        <div class="modal-eyebrow">Post Your Score</div>
+        <div class="modal-title">Hit The Board.</div>
+        <div class="modal-sub">Streak of ${state.streak}. Post it to the leaderboard.</div>
+        <div class="modal-field">
+          <div class="modal-field-label">Your Initials</div>
+          <input class="modal-initials" id="modalInitials" maxlength="3" placeholder="YKB" autocomplete="off"/>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">Your State</div>
+          <select class="modal-select" id="modalState">
+            <option value="">Select a state...</option>
+            ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        <button class="btn-modal-submit" id="modalSubmit" disabled>Submit Score</button>
+        <button class="btn-modal-skip" id="modalSkip">Skip</button>
+      </div>
+    </div>`;
+
+  const inp = document.getElementById('modalInitials');
+  const sel = document.getElementById('modalState');
+  const btn = document.getElementById('modalSubmit');
+  function checkReady() { btn.disabled = inp.value.trim().length < 2 || !sel.value; }
+  inp.addEventListener('input', checkReady);
+  sel.addEventListener('change', checkReady);
+  btn.addEventListener('click', async () => {
+    const initials = inp.value.trim().toUpperCase();
+    const userState = sel.value;
+    btn.disabled = true; btn.textContent = 'Posting...';
+    try {
+      await sb.from('game_scores').insert({
+        initials, state: userState, score: state.streak,
+        tier: 'STREAK', game_type: 'streaker',
+        day_number: Math.floor((new Date() - new Date('2025-01-01')) / 86400000) + 1,
+        game_date: new Date().toISOString().split('T')[0],
+        emoji_string: ''
+      });
+      overlayRoot.innerHTML = '';
+    } catch(err) {
+      console.error(err);
+      btn.textContent = 'Error — Try Again';
+      btn.disabled = false;
+    }
+  });
+  document.getElementById('modalSkip')?.addEventListener('click', () => { overlayRoot.innerHTML = ''; });
+  document.getElementById('modalOverlay')?.addEventListener('click', e => { if (e.target.id === 'modalOverlay') overlayRoot.innerHTML = ''; });
+}
+
+init();
+</script>
+</body>
+</html>
