@@ -319,11 +319,13 @@ function submitGuess(override) {
     }, 600);
   } else {
     state.flash = 'wrong';
+    state.lastWrongPlayer = state.currentPlayer;
     render();
     setTimeout(() => {
-      state.flash = null;
+      clearInterval(timerInterval);
+      state.phase = 'gameover';
       render();
-    }, 400);
+    }, 800);
   }
 }
 

@@ -185,8 +185,220 @@
 
 <nav>
   <a href="/" class="nav-wm">YOUKNOWBALL.</a>
-  <a href="/game" class="nav-play">Play Today</a>
+  <a href="/game.html" class="nav-play">Play Today</a>
 </nav>
+
+<div class="lb-hero">
+  <div class="lb-eyebrow">Rankings</div>
+  <div class="lb-title">LEADER<br>BOARD.</div>
+  <div class="lb-sub" id="lbSub">Loading...</div>
+</div>
+
+<div class="lb-tabs">
+  <button class="lb-tab active" onclick="setGameType('daily')">Daily Game</button>
+  <button class="lb-tab" onclick="setGameType('streaker')">Streaker</button>
+</div>
+
+<div class="lb-tabs" style="border-top:none;padding-top:0" id="timeTabs">
+  <button class="lb-tab active" onclick="setTab('today')" id="tabToday">Today</button>
+  <button class="lb-tab" onclick="setTab('alltime')" id="tabAlltime">All Time</button>
+</div>
+
+<div class="lb-day-bar" id="dayBar">
+  <div>
+    <div class="lb-day-label">Day</div>
+    <div class="lb-day-val" id="dayDisplay">#—</div>
+  </div>
+  <div class="lb-day-nav">
+    <button class="lb-day-btn" id="prevBtn" onclick="changeDay(-1)">←</button>
+    <button class="lb-day-btn" id="nextBtn" onclick="changeDay(1)" disabled>Today</button>
+  </div>
+</div>
+
+<div class="lb-wrap">
+  <div class="lb-table-header" id="tableHeader">
+    <div>#</div>
+    <div>Player</div>
+    <div style="text-align:center">Score</div>
+    <div style="text-align:right">Tier</div>
+  </div>
+  <div id="lbBody">
+    <div class="lb-loading">Loading scores...</div>
+  </div>
+  <div class="lb-count" id="lbCount"></div>
+</div>
+
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://qoxgmscwbtdcvztksjtx.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
+  );
+
+  function getDayNum() {
+    return Math.floor((new Date() - new Date("2025-01-01")) / 86400000) + 1;
+  }
+
+  const todayNum = getDayNum();
+  let currentDay = todayNum;
+  let currentTab = 'today';
+  let currentGameType = 'daily';
+
+  function setGameType(type) {
+    currentGameType = type;
+    document.querySelectorAll('.lb-tabs')[0].querySelectorAll('.lb-tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && type === 'daily') || (i === 1 && type === 'streaker'));
+    });
+    // Streaker has no "today" tab — only all time makes sense
+    const timeTabs = document.getElementById('timeTabs');
+    const dayBar = document.getElementById('dayBar');
+    if (type === 'streaker') {
+      timeTabs.style.display = 'none';
+      dayBar.style.display = 'none';
+      currentTab = 'alltime';
+      document.getElementById('tableHeader').innerHTML = `
+        <div>#</div><div>Player</div>
+        <div style="text-align:center">Streak</div>
+        <div style="text-align:right">Best</div>`;
+    } else {
+      timeTabs.style.display = 'flex';
+      currentTab = 'today';
+      document.getElementById('tableHeader').innerHTML = `
+        <div>#</div><div>Player</div>
+        <div style="text-align:center">Score</div>
+        <div style="text-align:right">Tier</div>`;
+      dayBar.style.display = 'flex';
+    }
+    loadScores();
+  }
+
+  function setTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('#timeTabs .lb-tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'today') || (i === 1 && tab === 'alltime'));
+    });
+    document.getElementById('dayBar').style.display = tab === 'today' ? 'flex' : 'none';
+    loadScores();
+  }
+
+  function changeDay(dir) {
+    currentDay += dir;
+    if (currentDay > todayNum) currentDay = todayNum;
+    if (currentDay < 1) currentDay = 1;
+    document.getElementById('nextBtn').disabled = currentDay >= todayNum;
+    document.getElementById('prevBtn').disabled = currentDay <= 1;
+    loadScores();
+  }
+
+  function rankColor(i) {
+    if (i === 0) return 'gold';
+    if (i === 1) return 'silver';
+    if (i === 2) return 'bronze';
+    return '';
+  }
+
+  function rankSymbol(i) {
+    if (i === 0) return '🥇';
+    if (i === 1) return '🥈';
+    if (i === 2) return '🥉';
+    return i + 1;
+  }
+
+  function calcTier(score, hintsUsed) {
+    const wrong = 10 - score;
+    if (score === 10 && !hintsUsed) return 'YOUKNOWBALL';
+    if (wrong <= 2) return 'STUDENT OF THE GAME';
+    if (wrong <= 5) return 'ARM CHAIR EXPERT';
+    return 'CASUAL';
+  }
+
+  function streakTier(streak) {
+    if (streak >= 20) return 'YOUKNOWBALL';
+    if (streak >= 10) return 'STUDENT OF THE GAME';
+    if (streak >= 5)  return 'ARM CHAIR EXPERT';
+    return 'CASUAL';
+  }
+
+  async function loadScores() {
+    const body = document.getElementById('lbBody');
+    const sub = document.getElementById('lbSub');
+    const count = document.getElementById('lbCount');
+    body.innerHTML = '<div class="lb-loading">Loading...</div>';
+
+    try {
+      let query = sb.from('game_scores')
+        .select('initials, state, score, tier, hints_used, day_number, game_date, game_type')
+        .order('score', { ascending: false })
+        .order('created_at', { ascending: true })
+        .limit(100);
+
+      if (currentGameType === 'daily') {
+        query = query.or('game_type.eq.daily,game_type.is.null');
+        if (currentTab === 'today') {
+          query = query.eq('day_number', currentDay);
+          document.getElementById('dayDisplay').textContent = `#${currentDay}`;
+        }
+      } else {
+        query = query.eq('game_type', 'streaker');
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        body.innerHTML = `
+          <div class="lb-empty">
+            <div class="lb-empty-emoji">🏈</div>
+            <div class="lb-empty-title">No Scores Yet.</div>
+            <div class="lb-empty-sub">${currentGameType === 'streaker' ? 'Start a streak and post it.' : 'Be the first on the board today.'}</div>
+          </div>`;
+        sub.textContent = 'No entries yet';
+        count.textContent = '';
+        return;
+      }
+
+      sub.textContent = currentGameType === 'streaker'
+        ? `All time · ${data.length} streaks`
+        : currentTab === 'today'
+          ? `Day #${currentDay} · ${data.length} ${data.length === 1 ? 'player' : 'players'}`
+          : `All time · ${data.length} scores`;
+      count.textContent = `${data.length} scores`;
+
+      if (currentGameType === 'streaker') {
+        body.innerHTML = data.map((row, i) => `
+          <div class="lb-row ${i < 3 ? 'top-3' : ''}">
+            <div class="lb-rank ${rankColor(i)}">${rankSymbol(i)}</div>
+            <div class="lb-player">
+              <div class="lb-initials">${row.initials}</div>
+              <div class="lb-state">${row.state || ''}</div>
+            </div>
+            <div class="lb-score">${row.score}</div>
+            <div class="lb-tier" data-tier="${streakTier(row.score)}">${streakTier(row.score)}</div>
+          </div>`).join('');
+      } else {
+        body.innerHTML = data.map((row, i) => `
+          <div class="lb-row ${i < 3 ? 'top-3' : ''}">
+            <div class="lb-rank ${rankColor(i)}">${rankSymbol(i)}</div>
+            <div class="lb-player">
+              <div class="lb-initials">${row.initials}</div>
+              <div class="lb-state">${row.state || ''}</div>
+            </div>
+            <div class="lb-score">${row.score}/10</div>
+            <div class="lb-tier" data-tier="${calcTier(row.score, row.hints_used)}">${calcTier(row.score, row.hints_used)}</div>
+          </div>`).join('');
+      }
+
+    } catch(err) {
+      console.error(err);
+      body.innerHTML = '<div class="lb-empty"><div class="lb-empty-sub">Could not load scores. Try refreshing.</div></div>';
+    }
+  }
+
+  document.getElementById('prevBtn').disabled = currentDay <= 1;
+  loadScores();
+</script>
+</body>
+</html>
 
 <div class="lb-hero">
   <div class="lb-eyebrow">Daily Rankings</div>
