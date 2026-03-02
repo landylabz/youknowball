@@ -122,14 +122,15 @@ const sb = createClient(
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-let COLLEGES = [];
+const COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
 const TIERS = [
-  { emoji:"🟩", name:"SAVANT",   color:"#22c55e", match:(h,c)=> c && h===0 },
-  { emoji:"🟦", name:"SCHOLAR",  color:"#3b82f6", match:(h,c)=> c && h===1 },
-  { emoji:"🟧", name:"STUDENT",  color:"#f97316", match:(h,c)=> c && h===2 },
-  { emoji:"🟥", name:"CASUAL",   color:"#ef4444", match:(h,c)=> c && h===3 },
-  { emoji:"⬛", name:"WATERBOY", color:"#555",    match:(h,c)=> !c || h>3  },
+  { emoji:"\u2705",   name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
+  { emoji:"\uD83D\uDFE9", name:"SCHOLAR", color:"#4ade80", match:(h,c)=> c && h===1 },
+  { emoji:"\uD83D\uDFE6", name:"STUDENT", color:"#3b82f6", match:(h,c)=> c && h===2 },
+  { emoji:"\uD83D\uDFE8", name:"CASUAL",  color:"#facc15", match:(h,c)=> c && h===3 },
+  { emoji:"\uD83D\uDFE5", name:"WRONG",   color:"#ef4444", match:(h,c)=> !c && h===0 },
+  { emoji:"\uD83D\uDFEA", name:"BURNED",  color:"#a855f7", match:(h,c)=> !c && h>0  },
 ];
 
 function getTier(hints, correct) { return TIERS.find(t => t.match(hints, correct)); }
@@ -174,7 +175,7 @@ let dayPlayers = [];
 
 let state = {
   idx: 0, hints: 0, guess: "", results: [],
-  phase: "loading", flash: null, suggestions: [],
+  phase: "loading", flash: null, suggestions: [], wrongGuesses: 0,
 };
 
 async function init() {
@@ -183,7 +184,8 @@ async function init() {
       .from('players')
       .select('name, college, position, nfl_team, conference, difficulty_tier, rating, jersey_number, draft_round, state');
     if (error) throw error;
-    const cols = await sb.from('players').select('college'); if (cols.data) COLLEGES = [...new Set(cols.data.map(p => p.college))].sort();
+    const cols = await sb.from('players').select('college');
+    if (cols.data) COLLEGES = [...new Set(cols.data.map(p => p.college))].sort();
     const t1 = seededShuffle(data.filter(p => p.difficulty_tier === '1'), daySeed);
     const t2 = seededShuffle(data.filter(p => p.difficulty_tier === '2'), daySeed + 1);
     const t3 = seededShuffle(data.filter(p => p.difficulty_tier === '3'), daySeed + 2);
@@ -384,12 +386,29 @@ function submitGuess(override) {
       if (state.idx + 1 >= PLAYERS_PER_DAY) { state.phase = "results"; render(); }
       else {
         state.phase = "between"; render();
-        setTimeout(() => { state.idx++; state.hints = 0; state.guess = ""; state.phase = "playing"; render(); }, 2200);
+        setTimeout(() => { state.idx++; state.hints = 0; state.guess = ""; state.phase = "playing"; state.wrongGuesses = 0; render(); }, 2200);
       }
     }, 500);
   } else {
-    state.flash = "wrong"; render();
-    setTimeout(() => { state.flash = null; render(); }, 400);
+    state.wrongGuesses = (state.wrongGuesses || 0) + 1;
+    if (state.wrongGuesses >= 3) {
+      state.flash = "wrong"; render();
+      setTimeout(() => {
+        state.flash = null;
+        const tier = getTier(state.hints, false);
+        state.results.push({ player, correct: false, hintsUsed: state.hints, tier });
+        state.suggestions = [];
+        state.wrongGuesses = 0;
+        if (state.idx + 1 >= PLAYERS_PER_DAY) { state.phase = "results"; render(); }
+        else {
+          state.phase = "between"; render();
+          setTimeout(() => { state.idx++; state.hints = 0; state.guess = ""; state.phase = "playing"; state.wrongGuesses = 0; render(); }, 2200);
+        }
+      }, 800);
+    } else {
+      state.flash = "wrong"; render();
+      setTimeout(() => { state.flash = null; render(); }, 400);
+    }
   }
 }
 
@@ -410,7 +429,7 @@ async function handleShare() {
   const emojis = state.results.map(r => r.tier.emoji).join(" ");
   const text = `Sorry, I know ball.\n🏈 YouKnowBall.io · Day #${dayNum}\n${correct}/${PLAYERS_PER_DAY} correct\n${emojis}\nyouknowball.io`;
   const btn = document.getElementById("shareBtn");
-  if (navigator.share) { await navigator.share({ text }); }
+  if (navigator.share) { await navigator.share({ title: "YouKnowBall.io", text: text, url: "https://youknowball.io" }); }
   else {
     await navigator.clipboard.writeText(text);
     if (btn) { btn.textContent = "Copied ✓"; setTimeout(() => { btn.textContent = "Share"; }, 2000); }
@@ -493,6 +512,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
