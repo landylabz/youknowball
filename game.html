@@ -122,7 +122,7 @@ const sb = createClient(
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-const COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
+let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
 const TIERS = [
   { emoji:"\u2705",   name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
@@ -200,7 +200,7 @@ async function init() {
     dayPlayers = pool.slice(0, 10);
   } catch(err) {
     console.error('Failed to load players:', err);
-    dayPlayers = seededShuffle(data || [], daySeed).slice(0, 10);
+    dayPlayers = [];
   }
   state.phase = "playing";
   render();
@@ -514,3 +514,5 @@ init();
 </script>
 </body>
 </html>
+
+
