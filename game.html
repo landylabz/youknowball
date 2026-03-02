@@ -893,9 +893,9 @@ function render() {
   const player = dayPlayers[idx];
   const cardClass = `player-card${flash === "correct" ? " flash-correct" : flash === "wrong" ? " flash-wrong" : ""}`;
   const hintDefs = [
-    { label: "Draft Round", value: `Round ${player.draft_round}` },
-    { label: "Conference",  value: player.conference },
-    { label: "State",       value: player.state },
+    { label: "Draft Round", value: player.draft_round ? `Round ${player.draft_round}` : "Undrafted" },
+    { label: "Conference",  value: player.conference || "Unknown" },
+    { label: "State",       value: player.state || "Unknown" },
   ];
 
   root.innerHTML = `
@@ -1186,4 +1186,3 @@ init();
 </script>
 </body>
 </html>
-
