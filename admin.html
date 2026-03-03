@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YKB Admin — Player Validation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --red:#FF1200;--black:#0A0A0A;--dark:#1A1A1A;--slate:#2E2E2E;--ash:#555;--white:#F5F5F5;
+      --green:#22c55e;--yellow:#facc15;--orange:#f97316;
+      --fd:'Bebas Neue',sans-serif;--fh:'Barlow Condensed',sans-serif;--fb:'Barlow',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--black);color:var(--white);font-family:var(--fb);-webkit-font-smoothing:antialiased;min-height:100vh}
+
+    /* LOGIN */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
+    .login-card{background:var(--dark);border:1px solid var(--slate);border-radius:20px;padding:48px 36px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:20px}
+    .login-title{font-family:var(--fd);font-size:36px;letter-spacing:3px;color:var(--white)}
+    .login-sub{font-size:12px;color:var(--ash);letter-spacing:2px;text-transform:uppercase;margin-top:-12px}
+    .login-input{width:100%;background:var(--black);border:1.5px solid var(--slate);border-radius:10px;padding:14px 16px;font-size:16px;color:var(--white);outline:none;transition:border-color .2s;-webkit-text-security:disc}
+    .login-input:focus{border-color:var(--red)}
+    .login-btn{width:100%;background:var(--red);border:none;border-radius:10px;padding:16px;font-family:var(--fd);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer}
+    .login-error{font-size:12px;color:var(--red);text-align:center;letter-spacing:2px;text-transform:uppercase}
+
+    /* MAIN */
+    .app{display:none;flex-direction:column;min-height:100vh}
+    .app.visible{display:flex}
+
+    /* HEADER */
+    .header{background:var(--red);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .header-title{font-family:var(--fd);font-size:22px;letter-spacing:2px}
+    .header-stats{display:flex;gap:20px;align-items:center}
+    .stat{text-align:center}
+    .stat-num{font-family:var(--fd);font-size:22px;letter-spacing:1px;line-height:1}
+    .stat-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.6)}
+    .header-logout{background:rgba(0,0,0,.25);border:none;border-radius:6px;padding:6px 12px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--white);cursor:pointer}
+
+    /* FILTERS */
+    .filters{background:var(--dark);border-bottom:1px solid var(--slate);padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .filter-btn{background:transparent;border:1px solid var(--slate);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .15s}
+    .filter-btn.active{background:var(--red);border-color:var(--red);color:var(--white)}
+    .filter-search{background:var(--black);border:1px solid var(--slate);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--white);outline:none;width:200px;margin-left:auto}
+    .filter-search:focus{border-color:var(--red)}
+
+    /* PROGRESS BAR */
+    .progress-wrap{background:var(--dark);border-bottom:1px solid var(--slate);padding:10px 24px;display:flex;align-items:center;gap:14px}
+    .progress-bar-bg{flex:1;height:6px;background:var(--slate);border-radius:3px;overflow:hidden}
+    .progress-bar-fill{height:100%;background:var(--green);border-radius:3px;transition:width .4s ease}
+    .progress-text{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);min-width:120px;text-align:right}
+
+    /* TABLE */
+    .table-wrap{flex:1;overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:800px}
+    thead{background:var(--dark);position:sticky;top:57px;z-index:50}
+    th{padding:12px 16px;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash);text-align:left;border-bottom:1px solid var(--slate);white-space:nowrap}
+    td{padding:12px 16px;font-size:13px;border-bottom:1px solid #111;vertical-align:middle}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    tr.validated-row td{border-left:3px solid var(--green)}
+    tr.unvalidated-row td{border-left:3px solid transparent}
+
+    .td-name{font-family:var(--fh);font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.5px}
+    .td-college{color:var(--ash);font-size:12px}
+    .td-num{font-family:var(--fd);font-size:22px;color:var(--red);letter-spacing:1px}
+    .td-pos{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash)}
+    .td-tier{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:4px}
+    .td-tier.t1{background:rgba(34,197,94,.12);color:var(--green)}
+    .td-tier.t2{background:rgba(250,204,21,.1);color:var(--yellow)}
+    .td-tier.t3{background:rgba(249,115,22,.1);color:var(--orange)}
+
+    /* INLINE EDIT */
+    .edit-input{background:var(--black);border:1.5px solid var(--red);border-radius:6px;padding:6px 10px;font-size:13px;color:var(--white);outline:none;width:100%;min-width:80px}
+    .num-input{width:70px;font-family:var(--fd);font-size:18px;text-align:center}
+
+    /* ACTION BUTTONS */
+    .actions{display:flex;gap:6px;align-items:center}
+    .btn-validate{background:var(--green);border:none;border-radius:6px;padding:7px 14px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#000;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+    .btn-validate:hover{opacity:.85}
+    .btn-edit{background:transparent;border:1px solid var(--slate);border-radius:6px;padding:7px 12px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .15s}
+    .btn-edit:hover{border-color:var(--white);color:var(--white)}
+    .btn-save{background:var(--yellow);border:none;border-radius:6px;padding:7px 14px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#000;cursor:pointer}
+    .btn-cancel{background:transparent;border:1px solid var(--slate);border-radius:6px;padding:7px 10px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);cursor:pointer}
+    .btn-remove{background:transparent;border:1px solid #333;border-radius:6px;padding:7px 10px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#444;cursor:pointer;transition:all .15s}
+    .btn-remove:hover{border-color:var(--red);color:var(--red)}
+    .validated-badge{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:4px}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--dark);border:1px solid var(--green);border-radius:12px;padding:14px 20px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--white);z-index:999;animation:toastIn .3s ease;pointer-events:none}
+    .toast.error{border-color:var(--red)}
+    @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    .loading{display:flex;align-items:center;justify-content:center;padding:80px;flex-direction:column;gap:16px}
+    .loading-text{font-family:var(--fd);font-size:24px;letter-spacing:4px;color:var(--red);animation:pulse 1s ease infinite}
+    @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div>
+      <div class="login-title">YKB ADMIN</div>
+      <div class="login-sub">Player Validation Tool</div>
+    </div>
+    <input class="login-input" type="password" id="pwInput" placeholder="Password" autocomplete="off"/>
+    <div class="login-error" id="loginError" style="display:none">Wrong password</div>
+    <button class="login-btn" id="loginBtn">Enter</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="appWrap">
+  <div class="header">
+    <div class="header-title">YKB ADMIN · VALIDATION</div>
+    <div class="header-stats">
+      <div class="stat"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-num" id="statValidated" style="color:var(--green)">—</div><div class="stat-label">Validated</div></div>
+      <div class="stat"><div class="stat-num" id="statRemaining" style="color:var(--yellow)">—</div><div class="stat-label">Remaining</div></div>
+    </div>
+    <button class="header-logout" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">0 / 0 validated</div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all" id="filterAll">All</button>
+    <button class="filter-btn" data-filter="unvalidated" id="filterUnvalidated">Needs Validation</button>
+    <button class="filter-btn" data-filter="validated" id="filterValidated">Validated</button>
+    <button class="filter-btn" data-filter="t1" id="filterT1">Tier 1</button>
+    <button class="filter-btn" data-filter="t2" id="filterT2">Tier 2</button>
+    <button class="filter-btn" data-filter="t3" id="filterT3">Tier 3</button>
+    <input class="filter-search" id="searchInput" placeholder="Search player..." type="text"/>
+  </div>
+
+  <div class="table-wrap">
+    <div class="loading" id="loadingEl">
+      <div class="loading-text">LOADING...</div>
+    </div>
+    <table id="playerTable" style="display:none">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>College</th>
+          <th>Jersey</th>
+          <th>Pos</th>
+          <th>Team</th>
+          <th>Conf</th>
+          <th>Tier</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://qoxgmscwbtdcvztksjtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
+);
+
+const ADMIN_PASSWORD = 'ykb2026admin';
+
+let allPlayers = [];
+let currentFilter = 'all';
+let searchQuery = '';
+let editingId = null;
+
+// ── AUTH ──────────────────────────────────────────────────
+document.getElementById('loginBtn').addEventListener('click', tryLogin);
+document.getElementById('pwInput').addEventListener('keydown', e => { if(e.key === 'Enter') tryLogin(); });
+
+function tryLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').classList.add('visible');
+    loadPlayers();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+  }
+}
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  document.getElementById('appWrap').classList.remove('visible');
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+});
+
+// ── DATA ──────────────────────────────────────────────────
+async function loadPlayers() {
+  const { data, error } = await sb.from('players').select('*').order('name');
+  if (error) { showToast('Failed to load players', true); return; }
+  allPlayers = data;
+  updateStats();
+  renderTable();
+  document.getElementById('loadingEl').style.display = 'none';
+  document.getElementById('playerTable').style.display = 'table';
+}
+
+function updateStats() {
+  const total = allPlayers.length;
+  const validated = allPlayers.filter(p => p.validated).length;
+  const remaining = total - validated;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statValidated').textContent = validated;
+  document.getElementById('statRemaining').textContent = remaining;
+  document.getElementById('progressFill').style.width = total ? (validated/total*100) + '%' : '0%';
+  document.getElementById('progressText').textContent = `${validated} / ${total} validated`;
+}
+
+function getFilteredPlayers() {
+  let players = [...allPlayers];
+  if (currentFilter === 'validated') players = players.filter(p => p.validated);
+  if (currentFilter === 'unvalidated') players = players.filter(p => !p.validated);
+  if (currentFilter === 't1') players = players.filter(p => p.difficulty_tier === '1');
+  if (currentFilter === 't2') players = players.filter(p => p.difficulty_tier === '2');
+  if (currentFilter === 't3') players = players.filter(p => p.difficulty_tier === '3');
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    players = players.filter(p => p.name.toLowerCase().includes(q) || p.college?.toLowerCase().includes(q));
+  }
+  return players;
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function renderTable() {
+  const players = getFilteredPlayers();
+  const body = document.getElementById('tableBody');
+  if (!players.length) {
+    body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:48px;color:var(--ash);letter-spacing:3px;text-transform:uppercase;font-size:11px">No players found</td></tr>`;
+    return;
+  }
+  body.innerHTML = players.map((p, i) => renderRow(p, i)).join('');
+  attachRowEvents();
+}
+
+function renderRow(p, i) {
+  const isEditing = editingId === p.id;
+  const tierClass = p.difficulty_tier === '1' ? 't1' : p.difficulty_tier === '2' ? 't2' : 't3';
+  const rowClass = p.validated ? 'validated-row' : 'unvalidated-row';
+
+  if (isEditing) {
+    return `<tr class="${rowClass}" data-id="${p.id}">
+      <td style="color:var(--ash);font-size:11px">${i+1}</td>
+      <td><input class="edit-input" id="edit-name-${p.id}" value="${p.name || ''}" placeholder="Name"/></td>
+      <td><input class="edit-input" id="edit-college-${p.id}" value="${p.college || ''}" placeholder="College"/></td>
+      <td><input class="edit-input num-input" id="edit-jersey-${p.id}" value="${p.jersey_number ?? ''}" placeholder="#" type="number"/></td>
+      <td><input class="edit-input" id="edit-pos-${p.id}" value="${p.position || ''}" placeholder="Pos" style="width:60px"/></td>
+      <td><input class="edit-input" id="edit-team-${p.id}" value="${p.nfl_team || ''}" placeholder="Team"/></td>
+      <td><input class="edit-input" id="edit-conf-${p.id}" value="${p.conference || ''}" placeholder="Conf"/></td>
+      <td><select class="edit-input" id="edit-tier-${p.id}" style="width:60px">
+        <option value="1" ${p.difficulty_tier==='1'?'selected':''}>T1</option>
+        <option value="2" ${p.difficulty_tier==='2'?'selected':''}>T2</option>
+        <option value="3" ${p.difficulty_tier==='3'?'selected':''}>T3</option>
+      </select></td>
+      <td></td>
+      <td class="actions">
+        <button class="btn-save" data-action="save" data-id="${p.id}">\u2713 Save</button>
+        <button class="btn-cancel" data-action="cancel" data-id="${p.id}">Cancel</button>
+      </td>
+    </tr>`;
+  }
+
+  return `<tr class="${rowClass}" data-id="${p.id}">
+    <td style="color:var(--ash);font-size:11px">${i+1}</td>
+    <td>
+      <div class="td-name">${p.name || '—'}</div>
+    </td>
+    <td><div class="td-college">${p.college || '—'}</div></td>
+    <td><div class="td-num">${p.jersey_number != null ? '#' + p.jersey_number : '—'}</div></td>
+    <td><div class="td-pos">${p.position || '—'}</div></td>
+    <td style="font-size:12px;color:var(--ash)">${p.nfl_team || '—'}</td>
+    <td style="font-size:11px;color:var(--ash)">${p.conference || '—'}</td>
+    <td><span class="td-tier ${tierClass}">T${p.difficulty_tier || '?'}</span></td>
+    <td>${p.validated ? '<span class="validated-badge">\u2705 Valid</span>' : '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash)">Pending</span>'}</td>
+    <td class="actions">
+      ${!p.validated ? `<button class="btn-validate" data-action="validate" data-id="${p.id}">\u2713 Validate</button>` : `<button class="btn-edit" data-action="unvalidate" data-id="${p.id}">Unvalidate</button>`}
+      <button class="btn-edit" data-action="edit" data-id="${p.id}">Edit</button>
+      <button class="btn-remove" data-action="remove" data-id="${p.id}">\u2715</button>
+    </td>
+  </tr>`;
+}
+
+function attachRowEvents() {
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.dataset.action;
+      const id = parseInt(btn.dataset.id);
+      if (action === 'validate')   await validatePlayer(id, true);
+      if (action === 'unvalidate') await validatePlayer(id, false);
+      if (action === 'edit')       { editingId = id; renderTable(); }
+      if (action === 'cancel')     { editingId = null; renderTable(); }
+      if (action === 'save')       await savePlayer(id);
+      if (action === 'remove')     await removePlayer(id);
+    });
+  });
+}
+
+// ── ACTIONS ───────────────────────────────────────────────
+async function validatePlayer(id, val) {
+  const { error } = await sb.from('players').update({
+    validated: val,
+    validated_at: val ? new Date().toISOString() : null,
+    validated_by: val ? 'admin' : null
+  }).eq('id', id);
+  if (error) { showToast('Error updating', true); return; }
+  const p = allPlayers.find(p => p.id === id);
+  if (p) { p.validated = val; p.validated_at = val ? new Date().toISOString() : null; }
+  updateStats();
+  renderTable();
+  showToast(val ? '\u2705 Validated' : 'Unvalidated');
+}
+
+async function savePlayer(id) {
+  const updates = {
+    name:           document.getElementById(`edit-name-${id}`)?.value.trim(),
+    college:        document.getElementById(`edit-college-${id}`)?.value.trim(),
+    jersey_number:  parseInt(document.getElementById(`edit-jersey-${id}`)?.value) || null,
+    position:       document.getElementById(`edit-pos-${id}`)?.value.trim(),
+    nfl_team:       document.getElementById(`edit-team-${id}`)?.value.trim(),
+    conference:     document.getElementById(`edit-conf-${id}`)?.value.trim(),
+    difficulty_tier:document.getElementById(`edit-tier-${id}`)?.value,
+  };
+  const { error } = await sb.from('players').update(updates).eq('id', id);
+  if (error) { showToast('Save failed', true); return; }
+  const idx = allPlayers.findIndex(p => p.id === id);
+  if (idx !== -1) allPlayers[idx] = { ...allPlayers[idx], ...updates };
+  editingId = null;
+  updateStats();
+  renderTable();
+  showToast('\u2713 Saved');
+}
+
+async function removePlayer(id) {
+  if (!confirm('Remove this player? This cannot be undone.')) return;
+  const { error } = await sb.from('players').delete().eq('id', id);
+  if (error) { showToast('Delete failed', true); return; }
+  allPlayers = allPlayers.filter(p => p.id !== id);
+  updateStats();
+  renderTable();
+  showToast('Player removed');
+}
+
+// ── FILTERS ───────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentFilter = btn.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderTable();
+});
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+</script>
+</body>
+</html>
