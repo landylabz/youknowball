@@ -195,8 +195,8 @@
 </div>
 
 <div class="lb-tabs">
-  <button class="lb-tab active" onclick="setGameType('daily')">Daily Game</button>
-  <button class="lb-tab" onclick="setGameType('streaker')">Streaker</button>
+  
+  <button class="lb-tab active" onclick="setGameType('streaker')">Streaker</button>
 </div>
 
 <div class="lb-tabs" style="border-top:none;padding-top:0" id="timeTabs">
@@ -242,7 +242,7 @@
   const todayNum = getDayNum();
   let currentDay = todayNum;
   let currentTab = 'today';
-  let currentGameType = 'daily';
+  let currentGameType = 'streaker';
 
   function setGameType(type) {
     currentGameType = type;
@@ -552,3 +552,6 @@
 </script>
 </body>
 </html>
+
+
+
