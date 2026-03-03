@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>??</text></svg>"/><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>YouKnowBall.io</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,600&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
@@ -21,7 +21,7 @@
     .header-sub{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4)}
     .progress{background:var(--dark);padding:10px 20px;display:flex;gap:5px;border-bottom:1px solid var(--slate)}
     .pip{flex:1;height:4px;border-radius:2px;background:var(--slate);transition:background .4s}
-    .pip.correct{background:var(--red)} .pip.wrong{background:#222} .pip.current{background:rgba(255,18,0,.35)}
+    .pip.correct{background:#22c55e} .pip.wrong{background:#ef4444} .pip.current{background:rgba(255,18,0,.35)}
     .main{padding:24px 20px;display:flex;flex-direction:column;gap:18px;flex:1}
     .counter{display:flex;align-items:center;justify-content:space-between}
     .counter-label{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
@@ -122,11 +122,11 @@ const sb = createClient(
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
+const COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
 const TIERS = [
-  { emoji:"\u2705",       name:"BALL KNOWER",  color:"#22c55e", match:(h,c)=> c && h===0 },
-  { emoji:"\uD83D\uDFE6", name:"SCHOLAR", color:"#4ade80", match:(h,c)=> c && h>=1  },
+  { emoji:"\u2705",       name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
+  { emoji:"\uD83D\uDFE9", name:"SCHOLAR", color:"#4ade80", match:(h,c)=> c && h>=1  },
   { emoji:"\uD83D\uDFE5", name:"WRONG",   color:"#ef4444", match:(h,c)=> !c && h===0 },
   { emoji:"\uD83D\uDFEA", name:"BURNED",  color:"#a855f7", match:(h,c)=> !c && h>0  },
 ];
@@ -200,7 +200,8 @@ async function init() {
     console.error('Failed to load players:', err);
     dayPlayers = [];
   }
-  state.phase = "playing";
+  const hasSeenRules = localStorage.getItem('ykb_daily_rules');
+  state.phase = hasSeenRules ? "playing" : "rules";
   render();
 }
 
@@ -208,11 +209,53 @@ function render() {
   const root = document.getElementById("root");
   const { idx, hints, guess, results, phase, flash, suggestions } = state;
 
+  if (phase === "rules") {
+    const modalRoot = document.getElementById("modal-root");
+    modalRoot.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal-pill"></div>
+          <div class="modal-eyebrow">How To Play</div>
+          <div class="modal-title">Daily Game.</div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
+              <div style="font-size:20px;min-width:28px">\uD83C\uDFC8</div>
+              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">10 Players Daily</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">A new set of 10 NFL players every day at midnight. Guess which college they attended.</div></div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
+              <div style="font-size:20px;min-width:28px">\uD83D\uDFE5</div>
+              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">One Hint Available</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">Reveal the player's conference. Using it drops your tier for that player.</div></div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
+              <div style="font-size:20px;min-width:28px">\uD83D\uDEAB</div>
+              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">3 Wrong = Fail</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">Three wrong guesses on one player and you automatically move on. That one is a loss.</div></div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0">
+              <div style="font-size:20px;min-width:28px">\u2705</div>
+              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">Tiers</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">\u2705 Ball Knower &middot; \uD83D\uDFE6 Scholar (hint used) &middot; \uD83D\uDFE5 Wrong &middot; \uD83D\uDFEA Burned</div></div>
+            </div>
+          </div>
+          <button id="rulesStartBtn" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;margin-top:8px">Let's Go</button>
+        </div>
+      </div>`;
+    document.getElementById("rulesStartBtn").addEventListener("click", () => {
+      localStorage.setItem("ykb_daily_rules", "1");
+      modalRoot.innerHTML = "";
+      state.phase = "playing";
+      render();
+    });
+    return;
+  }
+
   if (phase === "loading") {
     root.innerHTML = `
       <header class="header">
         <div class="wordmark">YOUKNOWBALL.</div>
-        <div class="header-right"><div class="header-day">#${dayNum}</div><div class="header-sub">Daily Challenge</div><button onclick="showRules()" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:6px 10px;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--white);cursor:pointer;margin-left:8px">?</button></div>
+        <div class="header-right"><div class="header-day">#${dayNum}</div><div class="header-sub">Daily Challenge</div></div>
       </header>
       <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
         <div style="font-family:var(--font-d);font-size:28px;letter-spacing:4px;color:var(--red);animation:pulse 1.2s ease infinite">LOADING...</div>
@@ -226,7 +269,7 @@ function render() {
     root.innerHTML = `
       <header class="header">
         <div class="wordmark">YOUKNOWBALL.</div>
-        <div class="header-right"><div class="header-day">#${dayNum}</div><div class="header-sub">Daily Challenge</div><button onclick="showRules()" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:6px 10px;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--white);cursor:pointer;margin-left:8px">?</button></div>
+        <div class="header-right"><div class="header-day">#${dayNum}</div><div class="header-sub">Daily Challenge</div></div>
       </header>
       <div class="progress">${renderPips()}</div>
       <div class="between">
@@ -247,6 +290,7 @@ function render() {
     const tierStyle = overall.gradient
       ? `background: linear-gradient(135deg, #FFD700, #FFF8A0, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 12px rgba(255,215,0,0.6));`
       : `color: ${overall.color}; text-shadow: 0 0 20px ${overall.glow}44;`;
+    const emojiReport = results.map(r => r.tier.emoji).join("");
     root.innerHTML = `
       <header class="header">
         <div class="wordmark">YOUKNOWBALL.</div>
@@ -255,7 +299,7 @@ function render() {
       <div class="progress">${renderPips()}</div>
       <div class="results">
         <div class="results-hero">
-          <div class="results-day">YouKnowBall.io · Day #${dayNum}</div>
+          <div class="results-day">YouKnowBall.io · Daily Game #${dayNum}</div>
           <div class="results-tier" style="${tierStyle}">${overall.name}</div>
           <div class="results-tagline">"${overall.line}"</div>
           <div class="results-score">${correct}/${PLAYERS_PER_DAY} Correct</div>
@@ -272,12 +316,10 @@ function render() {
               <div class="result-tier-badge" style="color:${r.tier.color}">${r.tier.name}</div>
             </div>`).join("")}
         </div>
-        <button class="btn-share" id="shareBtn">Share</button>
-        <a href="/leaderboard.html" class="btn-leaderboard">Leaderboard</a>
+        <button class="btn-share" id="shareBtn">Share Results</button>
         <div class="midnight-note">New players every day at midnight</div>
       </div>`;
     document.getElementById("shareBtn").addEventListener("click", handleShare);
-    setTimeout(() => showModal(correct, overall), 600);
     return;
   }
 
@@ -424,13 +466,14 @@ function skipPlayer() {
 
 async function handleShare() {
   const correct = state.results.filter(r => r.correct).length;
-  const emojis = state.results.map(r => r.tier.emoji).join(" ");
-  const text = `Sorry, I know ball.\n🏈 YouKnowBall.io · Day #${dayNum}\n${correct}/${PLAYERS_PER_DAY} correct\n${emojis}\nyouknowball.io`;
+  const emojis = state.results.map(r => r.tier.emoji).join("");
+  const text = `I scored ${emojis} at youknowball.io`;
   const btn = document.getElementById("shareBtn");
-  if (navigator.share) { await navigator.share({ title: "YouKnowBall.io", text: text, url: "https://youknowball.io" }); }
-  else {
-    await navigator.clipboard.writeText(text);
-    if (btn) { btn.textContent = "Copied ✓"; setTimeout(() => { btn.textContent = "Share"; }, 2000); }
+  if (navigator.share) {
+    await navigator.share({ title: "YouKnowBall.io", text, url: "https://youknowball.io" });
+  } else {
+    await navigator.clipboard.writeText(text + "\nhttps://youknowball.io");
+    if (btn) { btn.textContent = "Copied \u2713"; setTimeout(() => { btn.textContent = "Share Results"; }, 2000); }
   }
 }
 
@@ -482,10 +525,10 @@ async function submitScore(initials, userState, correct, overall) {
   try {
     const { error } = await sb.from('game_scores').insert({
       initials, state: userState, score: correct,
-      tier: overall.name, hints_used: results.reduce((a,r) => a + (r.hintsUsed||0), 0), day_number: dayNum, game_date: today, emoji_string: emojis
+      tier: overall.name, day_number: dayNum, game_date: today, emoji_string: emojis
     });
     if (error) throw error;
-    try { localStorage.setItem('ykb_submitted', today); } catch(e) {}
+    localStorage.setItem('ykb_submitted', today);
     document.getElementById('modal-root').innerHTML = `
       <div class="modal-overlay">
         <div class="modal">
@@ -507,27 +550,52 @@ async function submitScore(initials, userState, correct, overall) {
 }
 
 function showRules() {
-  const m = document.getElementById("modal-root");
-  m.innerHTML = '<div class="modal-overlay" id="rulesOverlay"><div class="modal"><div class="modal-pill"></div><div class="modal-eyebrow">How To Play</div><div class="modal-title">Daily Game.</div><div style="display:flex;flex-direction:column;gap:0"><div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)"><div style="font-size:20px;min-width:28px">&#x1F3C8;</div><div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">10 Players Daily</div><div style="font-size:12px;color:var(--ash);line-height:1.5">A new set of 10 NFL players every day. Guess which college they attended.</div></div></div><div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)"><div style="font-size:20px;min-width:28px">&#x1F7E5;</div><div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">One Hint</div><div style="font-size:12px;color:var(--ash);line-height:1.5">Reveal the player conference. Costs you your tier for that player.</div></div></div><div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)"><div style="font-size:20px;min-width:28px">&#x1F6AB;</div><div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">3 Wrong = Fail</div><div style="font-size:12px;color:var(--ash);line-height:1.5">Three wrong guesses on one player and you automatically move on. That one is a loss.</div></div></div><div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0"><div style="font-size:20px;min-width:28px">&#x2705;</div><div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">Tiers</div><div style="font-size:12px;color:var(--ash);line-height:1.5">&#x2705; Ball Knower &middot; &#x1F7E6; Scholar (hint used) &middot; &#x1F7E5; Wrong &middot; &#x1F7EA; Burned</div></div></div></div><button onclick="document.getElementById(chr39modal-rootchr39).innerHTML=chr39chr39" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;margin-top:16px">Got It</button></div></div>';
-  m.innerHTML = m.innerHTML.replace(/chr39/g, String.fromCharCode(39));
-  document.getElementById("rulesOverlay")?.addEventListener("click", e => { if(e.target.id==="rulesOverlay") m.innerHTML=""; });
+  const modalRoot = document.getElementById('modal-root');
+  modalRoot.innerHTML = `
+    <div class="modal-overlay" id="rulesOverlay">
+      <div class="modal">
+        <div class="modal-pill"></div>
+        <div class="modal-eyebrow">How To Play</div>
+        <div class="modal-title">Daily Challenge.</div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
+            <div style="font-size:20px;min-width:28px;text-align:center">\uD83C\uDFC8</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px">10 Players Daily</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">Each day a new set of 10 NFL players. Guess which college they attended.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
+            <div style="font-size:20px;min-width:28px;text-align:center">\uD83D\uDFE5</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px">One Hint Available</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">Reveal the player's conference. Using it drops your tier for that player.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
+            <div style="font-size:20px;min-width:28px;text-align:center">\uD83D\uDEAB</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px">3 Wrong = Fail</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">Three wrong guesses on one player and you move on. That one's a loss.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0">
+            <div style="font-size:20px;min-width:28px;text-align:center">\u2705</div>
+            <div>
+              <div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px">Tiers</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">\u2705 Ball Knower · \uD83D\uDFE6 Scholar (hint used) · \uD83D\uDFE5 Wrong · \uD83D\uDFEA Burned</div>
+            </div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('modal-root').innerHTML=''" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer">Got It</button>
+      </div>
+    </div>`;
+  document.getElementById('rulesOverlay')?.addEventListener('click', e => {
+    if (e.target.id === 'rulesOverlay') modalRoot.innerHTML = '';
+  });
 }
 
 init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-

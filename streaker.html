@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>??</text></svg>"/>
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Streaker — YouKnowBall.io</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,600&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
@@ -358,6 +358,7 @@ function render() {
 
   if (state.phase === 'gameover') {
     clearInterval(timerInterval);
+    const footballs = Array(state.streak).fill('\uD83C\uDFC8').join('');
     root.innerHTML = `
       <header class="header">
         <a href="/game.html" class="wordmark">YOUKNOWBALL.</a>
@@ -375,9 +376,20 @@ function render() {
           <div class="gameover-last-name">${state.lastWrongPlayer.name}</div>
           <div class="gameover-last-college">${state.lastWrongPlayer.college}</div>
         </div>` : ''}
-        <button class="btn-play-again" id="playAgainBtn">Play Again</button>
+        <button class="btn-play-again" id="shareBtn">Share</button>
+        <button class="btn-play-again" id="playAgainBtn" style="background:transparent;border:1.5px solid var(--slate);color:var(--ash)">Play Again</button>
         <a href="/leaderboard.html" class="btn-leaderboard">Leaderboard</a>
       </div>`;
+    document.getElementById('shareBtn')?.addEventListener('click', async () => {
+      const text = `I scored ${footballs} at youknowball.io`;
+      const btn = document.getElementById('shareBtn');
+      if (navigator.share) {
+        await navigator.share({ title: 'YouKnowBall.io', text, url: 'https://youknowball.io' });
+      } else {
+        await navigator.clipboard.writeText(text + '\nhttps://youknowball.io');
+        if (btn) { btn.textContent = 'Copied \u2713'; setTimeout(() => { btn.textContent = 'Share'; }, 2000); }
+      }
+    });
     document.getElementById('playAgainBtn')?.addEventListener('click', () => {
       seenIds.clear();
       state = { phase: 'playing', streak: 0, hintInventory: 0, hintUsedThisRound: false, currentPlayer: null, guess: '', suggestions: [], flash: null, timeLeft: TIMER_SECONDS, lastWrongPlayer: null, pendingUnlock: false };
@@ -615,4 +627,3 @@ init();
 </script>
 </body>
 </html>
-
