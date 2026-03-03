@@ -187,7 +187,7 @@ async function init() {
     const t1 = seededShuffle(data.filter(p => p.difficulty_tier === '1'), daySeed);
     const t2 = seededShuffle(data.filter(p => p.difficulty_tier === '2'), daySeed + 1);
     const t3 = seededShuffle(data.filter(p => p.difficulty_tier === '3'), daySeed + 2);
-    const pool = [...t1.slice(0,4), ...t2.slice(0,4), ...t3.slice(0,2)];
+    const pool = [...t1.slice(0,3), ...t2.slice(0,4), ...t3.slice(0,3)];
     if (pool.length < 10) {
       const all = seededShuffle(data, daySeed);
       for (const p of all) {
@@ -599,6 +599,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
