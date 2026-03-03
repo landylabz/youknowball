@@ -180,7 +180,7 @@ async function init() {
   try {
     const { data, error } = await sb
       .from('players')
-      .select('name, college, position, nfl_team, conference, difficulty_tier, rating, jersey_number, draft_round, state');
+      .select('name, college, position, nfl_team, conference, difficulty_tier, rating, jersey_number, draft_round, state').eq('validated', true);
     if (error) throw error;
     const cols = await sb.from('players').select('college');
     if (cols.data) COLLEGES = [...new Set(cols.data.map(p => p.college))].sort();
@@ -599,4 +599,5 @@ init();
 </script>
 </body>
 </html>
+
 
