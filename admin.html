@@ -297,7 +297,7 @@ function attachRowEvents() {
   document.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const action = btn.dataset.action;
-      const id = parseInt(btn.dataset.id);
+      const id = btn.dataset.id;
       if (action === 'validate')   await validatePlayer(id, true);
       if (action === 'unvalidate') await validatePlayer(id, false);
       if (action === 'edit')       { editingId = id; renderTable(); }
@@ -381,3 +381,4 @@ function showToast(msg, isError = false) {
 </script>
 </body>
 </html>
+
