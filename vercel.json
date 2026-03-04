@@ -1,7 +1,8 @@
 {
-  "rewrites": [
+  "rewrites": [{ "source": "/nts", "destination": "/nts.html" },
     { "source": "/game", "destination": "/game.html" },
     { "source": "/leaderboard", "destination": "/leaderboard.html" }
   ]
 }
+
 
