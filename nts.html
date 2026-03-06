@@ -185,9 +185,10 @@
       <h1 class="intro-title">GUESS THE NFL OFFENSE<br/>BY THEIR COLLEGES</h1>
       <div class="rules-list">
         <div class="rule-row"><div class="rule-num oline">—</div><div><div class="rule-label">O-LINE</div><div class="rule-text">All 5 linemen start revealed. College badges only — no names.</div></div></div>
-        <div class="rule-row"><div class="rule-num">01</div><div><div class="rule-label">TE + SLOT</div><div class="rule-text">Tight end and slot receiver revealed.</div></div></div>
-        <div class="rule-row"><div class="rule-num">02</div><div><div class="rule-label">WR1 + WR2</div><div class="rule-text">Top two receivers revealed.</div></div></div>
-        <div class="rule-row"><div class="rule-num">03</div><div><div class="rule-label">QB + RB</div><div class="rule-text">The giveaway. Last chance.</div></div></div>
+        <div class="rule-row"><div class="rule-num">01</div><div><div class="rule-label">TE + WR2</div><div class="rule-text">Tight end and outside receiver revealed.</div></div></div>
+        <div class="rule-row"><div class="rule-num">02</div><div><div class="rule-label">WR1</div><div class="rule-text">The top wideout drops in.</div></div></div>
+        <div class="rule-row"><div class="rule-num">03</div><div><div class="rule-label">RB</div><div class="rule-text">The backfield joins the huddle.</div></div></div>
+        <div class="rule-row"><div class="rule-num">04</div><div><div class="rule-label">QB</div><div class="rule-text">The giveaway. Last resort.</div></div></div>
       </div>
       <div class="scoring-box">
         <div class="scoring-label">SCORING</div>
@@ -196,6 +197,7 @@
           <div class="scoring-item"><div class="scoring-emoji">🟦</div><div class="scoring-name">SCHOLAR</div><div class="scoring-pts">75pts</div></div>
           <div class="scoring-item"><div class="scoring-emoji">🟨</div><div class="scoring-name">STARTER</div><div class="scoring-pts">50pts</div></div>
           <div class="scoring-item"><div class="scoring-emoji">🟧</div><div class="scoring-name">ROOKIE</div><div class="scoring-pts">25pts</div></div>
+          <div class="scoring-item"><div class="scoring-emoji">🟫</div><div class="scoring-name">BENCH</div><div class="scoring-pts">10pts</div></div>
           <div class="scoring-item"><div class="scoring-emoji">⬛</div><div class="scoring-name water">WATERBOY</div><div class="scoring-pts">0pts</div></div>
         </div>
       </div>
@@ -259,8 +261,8 @@
 
 <script>
 // ─── SUPABASE ─────────────────────────────────────────────────────────────
-const SUPA_URL  = 'https://qoxgmscwbtdcvztksjtx.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI';
+const SUPA_URL  = 'https://xxxx.supabase.co';
+const SUPA_ANON = 'your-anon-key-here';
 const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
 
 // ─── SCHOOL THEMES ────────────────────────────────────────────────────────
@@ -365,49 +367,50 @@ const SCHOOLS = {
 };
 
 const TEAMS = [
-  {name:"Dallas Cowboys",p:{LT:{c:"Tulsa",n:"Tyler Smith"},LG:{c:"Notre Dame",n:"Zack Martin"},C:{c:"Kansas State",n:"Cooper Beebe"},RG:{c:"Alabama",n:"Tyler Booker"},RT:{c:"Texas Tech",n:"Terence Steele"},WR1:{c:"Oklahoma",n:"CeeDee Lamb"},WR2:{c:"Georgia",n:"George Pickens"},WR3:{c:"Tulsa",n:"Jalen Tolbert"},TE:{c:"Wisconsin",n:"Jake Ferguson"},RB:{c:"North Carolina",n:"Javonte Williams"},QB:{c:"Mississippi State",n:"Dak Prescott"}}},
-  {name:"Philadelphia Eagles",p:{LT:{c:"N/A (Rugby)",n:"Jordan Mailata"},LG:{c:"Alabama",n:"Landon Dickerson"},C:{c:"Nebraska",n:"Cam Jurgens"},RG:{c:"Alabama",n:"Tyler Steen"},RT:{c:"Oklahoma",n:"Lane Johnson"},WR1:{c:"Ole Miss",n:"A.J. Brown"},WR2:{c:"Alabama",n:"DeVonta Smith"},WR3:{c:"Oregon",n:"Jahan Dotson"},TE:{c:"South Dakota State",n:"Dallas Goedert"},RB:{c:"Penn State",n:"Saquon Barkley"},QB:{c:"Alabama",n:"Jalen Hurts"}}},
-  {name:"Kansas City Chiefs",p:{LT:{c:"Ohio State",n:"Josh Simmons"},LG:{c:"BYU",n:"Kingsley Suamataia"},C:{c:"Oklahoma",n:"Creed Humphrey"},RG:{c:"Tennessee",n:"Trey Smith"},RT:{c:"Florida",n:"Jawaan Taylor"},WR1:{c:"SMU",n:"Rashee Rice"},WR2:{c:"Texas",n:"Xavier Worthy"},WR3:{c:"Clemson",n:"DeAndre Hopkins"},TE:{c:"Cincinnati",n:"Travis Kelce"},RB:{c:"Rutgers",n:"Isiah Pacheco"},QB:{c:"Texas Tech",n:"Patrick Mahomes"}}},
-  {name:"San Francisco 49ers",p:{LT:{c:"Oklahoma",n:"Trent Williams"},LG:{c:"UTSA",n:"Spencer Burford"},C:{c:"UCLA",n:"Jake Brendel"},RG:{c:"Kansas",n:"Dominick Puni"},RT:{c:"West Virginia",n:"Colton McKivitz"},WR1:{c:"Arizona State",n:"Brandon Aiyuk"},WR2:{c:"Florida",n:"Ricky Pearsall"},WR3:{c:"South Carolina",n:"Deebo Samuel"},TE:{c:"Iowa",n:"George Kittle"},RB:{c:"Stanford",n:"Christian McCaffrey"},QB:{c:"Iowa State",n:"Brock Purdy"}}},
-  {name:"Baltimore Ravens",p:{LT:{c:"Notre Dame",n:"Ronnie Stanley"},LG:{c:"USC",n:"Andrew Vorhees"},C:{c:"Iowa",n:"Tyler Linderbaum"},RG:{c:"Minnesota",n:"Daniel Faalele"},RT:{c:"Washington",n:"Roger Rosengarten"},WR1:{c:"Boston College",n:"Zay Flowers"},WR2:{c:"Minnesota",n:"Rashod Bateman"},WR3:{c:"Clemson",n:"Nelson Agholor"},TE:{c:"Oklahoma",n:"Mark Andrews"},RB:{c:"Alabama",n:"Derrick Henry"},QB:{c:"Louisville",n:"Lamar Jackson"}}},
-  {name:"Detroit Lions",p:{LT:{c:"Ohio State",n:"Taylor Decker"},LG:{c:"Boston College",n:"Christian Mahogany"},C:{c:"Penn State",n:"Juice Scruggs"},RG:{c:"Georgia",n:"Tate Ratledge"},RT:{c:"Oregon",n:"Penei Sewell"},WR1:{c:"USC",n:"Amon-Ra St. Brown"},WR2:{c:"Alabama",n:"Jameson Williams"},WR3:{c:"Georgia",n:"Josh Reynolds"},TE:{c:"Iowa",n:"Sam LaPorta"},RB:{c:"Alabama",n:"Jahmyr Gibbs"},QB:{c:"California",n:"Jared Goff"}}},
-  {name:"Green Bay Packers",p:{LT:{c:"Penn State",n:"Rasheed Walker"},LG:{c:"Notre Dame",n:"Aaron Banks"},C:{c:"Mississippi State",n:"Elgton Jenkins"},RG:{c:"NC State",n:"Anthony Belton"},RT:{c:"Wake Forest",n:"Zach Tom"},WR1:{c:"North Dakota State",n:"Christian Watson"},WR2:{c:"Nevada",n:"Romeo Doubs"},WR3:{c:"Oregon",n:"Dontayvion Wicks"},TE:{c:"South Dakota State",n:"Tucker Kraft"},RB:{c:"Alabama",n:"Josh Jacobs"},QB:{c:"Utah State",n:"Jordan Love"}}},
-  {name:"Minnesota Vikings",p:{LT:{c:"Virginia Tech",n:"Christian Darrisaw"},LG:{c:"Ohio State",n:"Donovan Jackson"},C:{c:"Alabama",n:"Ryan Kelly"},RG:{c:"Penn State",n:"Will Fries"},RT:{c:"Pittsburgh",n:"Brian O'Neill"},WR1:{c:"LSU",n:"Justin Jefferson"},WR2:{c:"USC",n:"Jordan Addison"},WR3:{c:"Notre Dame",n:"Jordan Matthews"},TE:{c:"Iowa",n:"T.J. Hockenson"},RB:{c:"UTEP",n:"Aaron Jones"},QB:{c:"Michigan",n:"JJ McCarthy"}}},
-  {name:"Chicago Bears",p:{LT:{c:"Southern Utah",n:"Braxton Jones"},LG:{c:"NC State",n:"Joe Thuney"},C:{c:"Penn State",n:"Ryan Bates"},RG:{c:"Ohio State",n:"Jonah Jackson"},RT:{c:"Tennessee",n:"Darnell Wright"},WR1:{c:"Maryland",n:"DJ Moore"},WR2:{c:"Washington",n:"Rome Odunze"},WR3:{c:"Tennessee",n:"Keenan Allen"},TE:{c:"Notre Dame",n:"Cole Kmet"},RB:{c:"Georgia",n:"D'Andre Swift"},QB:{c:"USC",n:"Caleb Williams"}}},
-  {name:"Buffalo Bills",p:{LT:{c:"Temple",n:"Dion Dawkins"},LG:{c:"Wisconsin",n:"David Edwards"},C:{c:"Penn State",n:"Connor McGovern"},RG:{c:"Florida",n:"O'Cyrus Torrence"},RT:{c:"Northern Iowa",n:"Spencer Brown"},WR1:{c:"Boise State",n:"Khalil Shakir"},WR2:{c:"Tennessee",n:"Joshua Palmer"},WR3:{c:"Maryland",n:"Stefon Diggs"},TE:{c:"Utah",n:"Dalton Kincaid"},RB:{c:"Georgia",n:"James Cook"},QB:{c:"Wyoming",n:"Josh Allen"}}},
-  {name:"Cincinnati Bengals",p:{LT:{c:"Oklahoma",n:"Orlando Brown Jr."},LG:{c:"North Dakota State",n:"Cordell Volson"},C:{c:"Notre Dame",n:"Ted Karras"},RG:{c:"Kansas State",n:"Dalton Risner"},RT:{c:"Georgia",n:"Amarius Mims"},WR1:{c:"LSU",n:"Ja'Marr Chase"},WR2:{c:"Clemson",n:"Tee Higgins"},WR3:{c:"California",n:"Andrei Iosivas"},TE:{c:"Penn State",n:"Mike Gesicki"},RB:{c:"Illinois",n:"Chase Brown"},QB:{c:"Ohio State",n:"Joe Burrow"}}},
-  {name:"Washington Commanders",p:{LT:{c:"Ole Miss",n:"Laremy Tunsil"},LG:{c:"Tulsa",n:"Chris Paul"},C:{c:"Illinois",n:"Nick Allegretti"},RG:{c:"Texas",n:"Sam Cosmi"},RT:{c:"Oregon",n:"Josh Conerly Jr."},WR1:{c:"Ohio State",n:"Terry McLaurin"},WR2:{c:"South Carolina",n:"Deebo Samuel"},WR3:{c:"Virginia",n:"Noah Brown"},TE:{c:"Stanford",n:"Zach Ertz"},RB:{c:"Kentucky",n:"Chris Rodriguez Jr."},QB:{c:"LSU",n:"Jayden Daniels"}}},
-  {name:"Los Angeles Rams",p:{LT:{c:"Iowa",n:"Alaric Jackson"},LG:{c:"TCU",n:"Steve Avila"},C:{c:"Washington",n:"Coleman Shelton"},RG:{c:"Louisiana",n:"Kevin Dotson"},RT:{c:"Georgia",n:"Warren McClendon"},WR1:{c:"BYU",n:"Puka Nacua"},WR2:{c:"Fresno State",n:"Davante Adams"},WR3:{c:"Eastern Washington",n:"Cooper Kupp"},TE:{c:"Stanford",n:"Colby Parkinson"},RB:{c:"Notre Dame",n:"Kyren Williams"},QB:{c:"Georgia",n:"Matthew Stafford"}}},
-  {name:"Miami Dolphins",p:{LT:{c:"Houston",n:"Patrick Paul"},LG:{c:"Arizona",n:"Jonah Savaiinaea"},C:{c:"Notre Dame",n:"Aaron Brewer"},RG:{c:"Chattanooga",n:"Cole Strange"},RT:{c:"USC",n:"Austin Jackson"},WR1:{c:"Alabama",n:"Jaylen Waddle"},WR2:{c:"West Alabama",n:"Tyreek Hill"},WR3:{c:"Virginia",n:"Malik Washington"},TE:{c:"Georgia Tech",n:"Darren Waller"},RB:{c:"Texas A&M",n:"De'Von Achane"},QB:{c:"West Virginia",n:"Geno Smith"}}},
-  {name:"Pittsburgh Steelers",p:{LT:{c:"Georgia",n:"Broderick Jones"},LG:{c:"Oregon State",n:"Isaac Seumalo"},C:{c:"West Virginia",n:"Zach Frazier"},RG:{c:"South Dakota State",n:"Mason McCormick"},RT:{c:"Washington",n:"Troy Fautanu"},WR1:{c:"Ole Miss",n:"DK Metcalf"},WR2:{c:"Memphis",n:"Calvin Austin"},WR3:{c:"USC",n:"Van Jefferson"},TE:{c:"Penn State",n:"Pat Freiermuth"},RB:{c:"Snow College",n:"Jaylen Warren"},QB:{c:"California",n:"Aaron Rodgers"}}},
-  {name:"Seattle Seahawks",p:{LT:{c:"Mississippi State",n:"Charles Cross"},LG:{c:"North Dakota State",n:"Grey Zabel"},C:{c:"North Dakota State",n:"Jalen Sundell"},RG:{c:"LSU",n:"Anthony Bradford"},RT:{c:"Washington State",n:"Abraham Lucas"},WR1:{c:"Ohio State",n:"Jaxon Smith-Njigba"},WR2:{c:"Eastern Washington",n:"Cooper Kupp"},WR3:{c:"Fresno State",n:"Tyler Lockett"},TE:{c:"Michigan",n:"AJ Barner"},RB:{c:"UCLA",n:"Zach Charbonnet"},QB:{c:"USC",n:"Sam Darnold"}}},
-  {name:"New York Jets",p:{LT:{c:"Penn State",n:"Olu Fashanu"},LG:{c:"Clemson",n:"John Simpson"},C:{c:"Ohio State",n:"Josh Myers"},RG:{c:"USC",n:"Alijah Vera-Tucker"},RT:{c:"Missouri",n:"Armand Membou"},WR1:{c:"Ohio State",n:"Garrett Wilson"},WR2:{c:"Texas A&M",n:"Josh Reynolds"},WR3:{c:"North Carolina",n:"Malachi Corley"},TE:{c:"LSU",n:"Mason Taylor"},RB:{c:"Iowa State",n:"Breece Hall"},QB:{c:"Ohio State",n:"Justin Fields"}}},
-  {name:"New England Patriots",p:{LT:{c:"LSU",n:"Will Campbell"},LG:{c:"Georgia",n:"Jared Wilson"},C:{c:"NC State",n:"Garrett Bradbury"},RG:{c:"Michigan",n:"Mike Onwenu"},RT:{c:"Virginia",n:"Morgan Moses"},WR1:{c:"Maryland",n:"Stefon Diggs"},WR2:{c:"LSU",n:"Kayshon Boutte"},WR3:{c:"Texas A&M",n:"Kendrick Bourne"},TE:{c:"Arkansas",n:"Hunter Henry"},RB:{c:"Oklahoma",n:"Rhamondre Stevenson"},QB:{c:"North Carolina",n:"Drake Maye"}}},
-  {name:"Denver Broncos",p:{LT:{c:"Utah",n:"Garett Bolles"},LG:{c:"Oklahoma",n:"Ben Powers"},C:{c:"Washington",n:"Luke Wattenburg"},RG:{c:"Wisconsin-Whitewater",n:"Quinn Meinerz"},RT:{c:"Notre Dame",n:"Mike McGlinchey"},WR1:{c:"SMU",n:"Courtland Sutton"},WR2:{c:"Oregon",n:"Troy Franklin"},WR3:{c:"Ole Miss",n:"Marvin Mims Jr."},TE:{c:"Ole Miss",n:"Evan Engram"},RB:{c:"Ohio State",n:"JK Dobbins"},QB:{c:"Oregon",n:"Bo Nix"}}},
-  {name:"Las Vegas Raiders",p:{LT:{c:"UCLA",n:"Kolton Miller"},LG:{c:"Memphis",n:"Dylan Parham"},C:{c:"Humboldt State",n:"Alex Cappa"},RG:{c:"Oregon",n:"Jackson Powers-Johnson"},RT:{c:"Maryland",n:"DJ Glaze"},WR1:{c:"Cincinnati",n:"Tre Tucker"},WR2:{c:"TCU",n:"Jack Bech"},WR3:{c:"Alabama",n:"Davante Adams"},TE:{c:"Georgia",n:"Brock Bowers"},RB:{c:"Boise State",n:"Ashton Jeanty"},QB:{c:"West Virginia",n:"Geno Smith"}}},
-  {name:"Los Angeles Chargers",p:{LT:{c:"Northwestern",n:"Rashawn Slater"},LG:{c:"Boston College",n:"Zion Johnson"},C:{c:"UCLA",n:"Andre James"},RG:{c:"Louisville",n:"Mekhi Becton"},RT:{c:"Notre Dame",n:"Joe Alt"},WR1:{c:"Georgia",n:"Ladd McConkey"},WR2:{c:"TCU",n:"Quentin Johnston"},WR3:{c:"Syracuse",n:"Orande Gadsden"},TE:{c:"Syracuse",n:"Orande Gadsden"},RB:{c:"North Carolina",n:"Omarion Hampton"},QB:{c:"Oregon",n:"Justin Herbert"}}},
-  {name:"Atlanta Falcons",p:{LT:{c:"Texas A&M",n:"Jake Matthews"},LG:{c:"Syracuse",n:"Matthew Bergeron"},C:{c:"Appalachian State",n:"Ryan Neuzil"},RG:{c:"Boston College",n:"Chris Lindstrom"},RT:{c:"Washington",n:"Kaleb McGary"},WR1:{c:"USC",n:"Drake London"},WR2:{c:"Tulane",n:"Darnell Mooney"},WR3:{c:"Tennessee",n:"Ray-Ray McCloud"},TE:{c:"Florida",n:"Kyle Pitts"},RB:{c:"Texas",n:"Bijan Robinson"},QB:{c:"Washington",n:"Michael Penix Jr."}}},
-  {name:"Carolina Panthers",p:{LT:{c:"NC State",n:"Ikem Ekwonu"},LG:{c:"LSU",n:"Damien Lewis"},C:{c:"Tennessee",n:"Cade Mays"},RG:{c:"Louisiana",n:"Robert Hunt"},RT:{c:"Western Michigan",n:"Taylor Moton"},WR1:{c:"Arizona",n:"Tetairoa McMillan"},WR2:{c:"South Carolina",n:"Xavier Legette"},WR3:{c:"Alabama",n:"Adam Thielen"},TE:{c:"Texas",n:"Ja'Tavion Sanders"},RB:{c:"Oklahoma State",n:"Chuba Hubbard"},QB:{c:"Alabama",n:"Bryce Young"}}},
-  {name:"New Orleans Saints",p:{LT:{c:"Texas",n:"Kelvin Banks Jr."},LG:{c:"North Dakota State",n:"Dillon Radunz"},C:{c:"Texas A&M",n:"Erik McCoy"},RG:{c:"Michigan",n:"Cesar Ruiz"},RT:{c:"Oregon State",n:"Taliese Fuaga"},WR1:{c:"Ohio State",n:"Chris Olave"},WR2:{c:"Utah",n:"Devaughn Vele"},WR3:{c:"Washington",n:"Courtland Sutton"},TE:{c:"Oregon",n:"Juwan Johnson"},RB:{c:"Tennessee",n:"Alvin Kamara"},QB:{c:"Louisville",n:"Tyler Shough"}}},
-  {name:"Tampa Bay Buccaneers",p:{LT:{c:"Iowa",n:"Tristan Wirfs"},LG:{c:"Michigan",n:"Ben Bredeson"},C:{c:"Duke",n:"Graham Barton"},RG:{c:"North Dakota State",n:"Cody Mauch"},RT:{c:"Central Michigan",n:"Luke Goedeke"},WR1:{c:"Texas A&M",n:"Mike Evans"},WR2:{c:"Penn State",n:"Chris Godwin"},WR3:{c:"Alabama",n:"Jalen McMillan"},TE:{c:"Washington",n:"Cade Otton"},RB:{c:"Oregon",n:"Bucky Irving"},QB:{c:"Oklahoma",n:"Baker Mayfield"}}},
-  {name:"Arizona Cardinals",p:{LT:{c:"Ohio State",n:"Paris Johnson Jr."},LG:{c:"SMU",n:"Evan Brown"},C:{c:"Arkansas",n:"Hjalte Froholdt"},RG:{c:"UTEP",n:"Will Hernandez"},RT:{c:"Alabama",n:"Jonah Williams"},WR1:{c:"Ohio State",n:"Marvin Harrison Jr."},WR2:{c:"Stanford",n:"Michael Wilson"},WR3:{c:"Notre Dame",n:"Zach Pascal"},TE:{c:"Colorado State",n:"Trey McBride"},RB:{c:"Pittsburgh",n:"James Conner"},QB:{c:"NC State",n:"Jacoby Brissett"}}},
-  {name:"Houston Texans",p:{LT:{c:"Minnesota",n:"Aireontae Ersery"},LG:{c:"Notre Dame",n:"Jarrett Patterson"},C:{c:"Troy",n:"Jake Andrews"},RG:{c:"LSU",n:"Ed Ingram"},RT:{c:"Florida",n:"Trent Brown"},WR1:{c:"Michigan",n:"Nico Collins"},WR2:{c:"Iowa State",n:"Jayden Higgins"},WR3:{c:"Houston",n:"Tank Dell"},TE:{c:"Stanford",n:"Dalton Schultz"},RB:{c:"Iowa State",n:"David Montgomery"},QB:{c:"Ohio State",n:"C.J. Stroud"}}},
-  {name:"Indianapolis Colts",p:{LT:{c:"Central Michigan",n:"Bernhard Raimann"},LG:{c:"Notre Dame",n:"Quenton Nelson"},C:{c:"Wisconsin",n:"Tanor Bortolini"},RG:{c:"Pittsburgh",n:"Matt Goncalves"},RT:{c:"Auburn",n:"Braden Smith"},WR1:{c:"USC",n:"Michael Pittman Jr."},WR2:{c:"North Carolina",n:"Josh Downs"},WR3:{c:"Iowa",n:"Alec Pierce"},TE:{c:"Penn State",n:"Tyler Warren"},RB:{c:"Wisconsin",n:"Jonathan Taylor"},QB:{c:"Duke",n:"Daniel Jones"}}},
-  {name:"Jacksonville Jaguars",p:{LT:{c:"Wisconsin",n:"Cole Van Lanen"},LG:{c:"Boise State",n:"Ezra Cleveland"},C:{c:"Notre Dame",n:"Robert Hainsey"},RG:{c:"California",n:"Patrick Mekari"},RT:{c:"Oklahoma",n:"Anton Harrison"},WR1:{c:"LSU",n:"Brian Thomas Jr."},WR2:{c:"NC State",n:"Jakobi Meyers"},WR3:{c:"LSU",n:"Christian Kirk"},TE:{c:"Penn State",n:"Brenton Strange"},RB:{c:"Clemson",n:"Travis Etienne"},QB:{c:"Clemson",n:"Trevor Lawrence"}}},
-  {name:"Tennessee Titans",p:{LT:{c:"Texas A&M",n:"Dan Moore Jr."},LG:{c:"Northwestern",n:"Peter Skoronski"},C:{c:"Chattanooga",n:"Corey Levin"},RG:{c:"Wisconsin",n:"Kevin Zeitler"},RT:{c:"Alabama",n:"JC Latham"},WR1:{c:"Alabama",n:"Calvin Ridley"},WR2:{c:"Stanford",n:"Elic Ayomanor"},WR3:{c:"Memphis",n:"DeAndre Hopkins"},TE:{c:"Maryland",n:"Chigoziem Okonkwo"},RB:{c:"Memphis",n:"Tony Pollard"},QB:{c:"Miami",n:"Cam Ward"}}},
-  {name:"Cleveland Browns",p:{LT:{c:"Alabama",n:"Cam Robinson"},LG:{c:"Nevada",n:"Joel Bitonio"},C:{c:"LSU",n:"Ethan Pocic"},RG:{c:"Virginia Tech",n:"Wyatt Teller"},RT:{c:"Alabama State",n:"Tytus Howard"},WR1:{c:"Alabama",n:"Jerry Jeudy"},WR2:{c:"Tennessee",n:"Cedric Tillman"},WR3:{c:"Notre Dame",n:"Elijah Moore"},TE:{c:"Miami",n:"David Njoku"},RB:{c:"Ohio State",n:"Quinshon Judkins"},QB:{c:"Colorado",n:"Shedeur Sanders"}}},
-  {name:"New York Giants",p:{LT:{c:"Georgia",n:"Andrew Thomas"},LG:{c:"Michigan",n:"Jon Runyan"},C:{c:"Minnesota",n:"John Michael Schmitz"},RG:{c:"Penn",n:"Greg Van Roten"},RT:{c:"Texas A&M",n:"Jermaine Eluemunor"},WR1:{c:"LSU",n:"Malik Nabers"},WR2:{c:"Kentucky",n:"Wan'Dale Robinson"},WR3:{c:"Rutgers",n:"Darius Slayton"},TE:{c:"Penn State",n:"Theo Johnson"},RB:{c:"Arizona State",n:"Cam Skattebo"},QB:{c:"Ole Miss",n:"Jaxson Dart"}}},
+  {name:"Dallas Cowboys",p:{LT:{c:"Tulsa",n:"Tyler Smith"},LG:{c:"Notre Dame",n:"Zack Martin"},C:{c:"Kansas State",n:"Cooper Beebe"},RG:{c:"Alabama",n:"Tyler Booker"},RT:{c:"Texas Tech",n:"Terence Steele"},WR1:{c:"Oklahoma",n:"CeeDee Lamb"},WR2:{c:"Georgia",n:"George Pickens"},TE:{c:"Wisconsin",n:"Jake Ferguson"},RB:{c:"North Carolina",n:"Javonte Williams"},QB:{c:"Mississippi State",n:"Dak Prescott"}}},
+  {name:"Philadelphia Eagles",p:{LT:{c:"N/A (Rugby)",n:"Jordan Mailata"},LG:{c:"Alabama",n:"Landon Dickerson"},C:{c:"Nebraska",n:"Cam Jurgens"},RG:{c:"Alabama",n:"Tyler Steen"},RT:{c:"Oklahoma",n:"Lane Johnson"},WR1:{c:"Ole Miss",n:"A.J. Brown"},WR2:{c:"Alabama",n:"DeVonta Smith"},TE:{c:"South Dakota State",n:"Dallas Goedert"},RB:{c:"Penn State",n:"Saquon Barkley"},QB:{c:"Alabama",n:"Jalen Hurts"}}},
+  {name:"Kansas City Chiefs",p:{LT:{c:"Ohio State",n:"Josh Simmons"},LG:{c:"BYU",n:"Kingsley Suamataia"},C:{c:"Oklahoma",n:"Creed Humphrey"},RG:{c:"Tennessee",n:"Trey Smith"},RT:{c:"Florida",n:"Jawaan Taylor"},WR1:{c:"SMU",n:"Rashee Rice"},WR2:{c:"Texas",n:"Xavier Worthy"},TE:{c:"Cincinnati",n:"Travis Kelce"},RB:{c:"Rutgers",n:"Isiah Pacheco"},QB:{c:"Texas Tech",n:"Patrick Mahomes"}}},
+  {name:"San Francisco 49ers",p:{LT:{c:"Oklahoma",n:"Trent Williams"},LG:{c:"UTSA",n:"Spencer Burford"},C:{c:"UCLA",n:"Jake Brendel"},RG:{c:"Kansas",n:"Dominick Puni"},RT:{c:"West Virginia",n:"Colton McKivitz"},WR1:{c:"Arizona State",n:"Brandon Aiyuk"},WR2:{c:"Florida",n:"Ricky Pearsall"},TE:{c:"Iowa",n:"George Kittle"},RB:{c:"Stanford",n:"Christian McCaffrey"},QB:{c:"Iowa State",n:"Brock Purdy"}}},
+  {name:"Baltimore Ravens",p:{LT:{c:"Notre Dame",n:"Ronnie Stanley"},LG:{c:"USC",n:"Andrew Vorhees"},C:{c:"Iowa",n:"Tyler Linderbaum"},RG:{c:"Minnesota",n:"Daniel Faalele"},RT:{c:"Washington",n:"Roger Rosengarten"},WR1:{c:"Boston College",n:"Zay Flowers"},WR2:{c:"Minnesota",n:"Rashod Bateman"},TE:{c:"Oklahoma",n:"Mark Andrews"},RB:{c:"Alabama",n:"Derrick Henry"},QB:{c:"Louisville",n:"Lamar Jackson"}}},
+  {name:"Detroit Lions",p:{LT:{c:"Ohio State",n:"Taylor Decker"},LG:{c:"Boston College",n:"Christian Mahogany"},C:{c:"Penn State",n:"Juice Scruggs"},RG:{c:"Georgia",n:"Tate Ratledge"},RT:{c:"Oregon",n:"Penei Sewell"},WR1:{c:"USC",n:"Amon-Ra St. Brown"},WR2:{c:"Alabama",n:"Jameson Williams"},TE:{c:"Iowa",n:"Sam LaPorta"},RB:{c:"Alabama",n:"Jahmyr Gibbs"},QB:{c:"California",n:"Jared Goff"}}},
+  {name:"Green Bay Packers",p:{LT:{c:"Penn State",n:"Rasheed Walker"},LG:{c:"Notre Dame",n:"Aaron Banks"},C:{c:"Mississippi State",n:"Elgton Jenkins"},RG:{c:"NC State",n:"Anthony Belton"},RT:{c:"Wake Forest",n:"Zach Tom"},WR1:{c:"North Dakota State",n:"Christian Watson"},WR2:{c:"Nevada",n:"Romeo Doubs"},TE:{c:"South Dakota State",n:"Tucker Kraft"},RB:{c:"Alabama",n:"Josh Jacobs"},QB:{c:"Utah State",n:"Jordan Love"}}},
+  {name:"Minnesota Vikings",p:{LT:{c:"Virginia Tech",n:"Christian Darrisaw"},LG:{c:"Ohio State",n:"Donovan Jackson"},C:{c:"Alabama",n:"Ryan Kelly"},RG:{c:"Penn State",n:"Will Fries"},RT:{c:"Pittsburgh",n:"Brian O'Neill"},WR1:{c:"LSU",n:"Justin Jefferson"},WR2:{c:"USC",n:"Jordan Addison"},TE:{c:"Iowa",n:"T.J. Hockenson"},RB:{c:"UTEP",n:"Aaron Jones"},QB:{c:"Michigan",n:"JJ McCarthy"}}},
+  {name:"Chicago Bears",p:{LT:{c:"Southern Utah",n:"Braxton Jones"},LG:{c:"NC State",n:"Joe Thuney"},C:{c:"Penn State",n:"Ryan Bates"},RG:{c:"Ohio State",n:"Jonah Jackson"},RT:{c:"Tennessee",n:"Darnell Wright"},WR1:{c:"Maryland",n:"DJ Moore"},WR2:{c:"Washington",n:"Rome Odunze"},TE:{c:"Notre Dame",n:"Cole Kmet"},RB:{c:"Georgia",n:"D'Andre Swift"},QB:{c:"USC",n:"Caleb Williams"}}},
+  {name:"Buffalo Bills",p:{LT:{c:"Temple",n:"Dion Dawkins"},LG:{c:"Wisconsin",n:"David Edwards"},C:{c:"Penn State",n:"Connor McGovern"},RG:{c:"Florida",n:"O'Cyrus Torrence"},RT:{c:"Northern Iowa",n:"Spencer Brown"},WR1:{c:"Boise State",n:"Khalil Shakir"},WR2:{c:"Tennessee",n:"Joshua Palmer"},TE:{c:"Utah",n:"Dalton Kincaid"},RB:{c:"Georgia",n:"James Cook"},QB:{c:"Wyoming",n:"Josh Allen"}}},
+  {name:"Cincinnati Bengals",p:{LT:{c:"Oklahoma",n:"Orlando Brown Jr."},LG:{c:"North Dakota State",n:"Cordell Volson"},C:{c:"Notre Dame",n:"Ted Karras"},RG:{c:"Kansas State",n:"Dalton Risner"},RT:{c:"Georgia",n:"Amarius Mims"},WR1:{c:"LSU",n:"Ja'Marr Chase"},WR2:{c:"Clemson",n:"Tee Higgins"},TE:{c:"Penn State",n:"Mike Gesicki"},RB:{c:"Illinois",n:"Chase Brown"},QB:{c:"Ohio State",n:"Joe Burrow"}}},
+  {name:"Washington Commanders",p:{LT:{c:"Ole Miss",n:"Laremy Tunsil"},LG:{c:"Tulsa",n:"Chris Paul"},C:{c:"Illinois",n:"Nick Allegretti"},RG:{c:"Texas",n:"Sam Cosmi"},RT:{c:"Oregon",n:"Josh Conerly Jr."},WR1:{c:"Ohio State",n:"Terry McLaurin"},WR2:{c:"South Carolina",n:"Deebo Samuel"},TE:{c:"Stanford",n:"Zach Ertz"},RB:{c:"Kentucky",n:"Chris Rodriguez Jr."},QB:{c:"LSU",n:"Jayden Daniels"}}},
+  {name:"Los Angeles Rams",p:{LT:{c:"Iowa",n:"Alaric Jackson"},LG:{c:"TCU",n:"Steve Avila"},C:{c:"Washington",n:"Coleman Shelton"},RG:{c:"Louisiana",n:"Kevin Dotson"},RT:{c:"Georgia",n:"Warren McClendon"},WR1:{c:"BYU",n:"Puka Nacua"},WR2:{c:"Fresno State",n:"Davante Adams"},TE:{c:"Stanford",n:"Colby Parkinson"},RB:{c:"Notre Dame",n:"Kyren Williams"},QB:{c:"Georgia",n:"Matthew Stafford"}}},
+  {name:"Miami Dolphins",p:{LT:{c:"Houston",n:"Patrick Paul"},LG:{c:"Arizona",n:"Jonah Savaiinaea"},C:{c:"Notre Dame",n:"Aaron Brewer"},RG:{c:"Chattanooga",n:"Cole Strange"},RT:{c:"USC",n:"Austin Jackson"},WR1:{c:"Alabama",n:"Jaylen Waddle"},WR2:{c:"West Alabama",n:"Tyreek Hill"},TE:{c:"Georgia Tech",n:"Darren Waller"},RB:{c:"Texas A&M",n:"De'Von Achane"},QB:{c:"West Virginia",n:"Geno Smith"}}},
+  {name:"Pittsburgh Steelers",p:{LT:{c:"Georgia",n:"Broderick Jones"},LG:{c:"Oregon State",n:"Isaac Seumalo"},C:{c:"West Virginia",n:"Zach Frazier"},RG:{c:"South Dakota State",n:"Mason McCormick"},RT:{c:"Washington",n:"Troy Fautanu"},WR1:{c:"Ole Miss",n:"DK Metcalf"},WR2:{c:"Memphis",n:"Calvin Austin"},TE:{c:"Penn State",n:"Pat Freiermuth"},RB:{c:"Snow College",n:"Jaylen Warren"},QB:{c:"California",n:"Aaron Rodgers"}}},
+  {name:"Seattle Seahawks",p:{LT:{c:"Mississippi State",n:"Charles Cross"},LG:{c:"North Dakota State",n:"Grey Zabel"},C:{c:"North Dakota State",n:"Jalen Sundell"},RG:{c:"LSU",n:"Anthony Bradford"},RT:{c:"Washington State",n:"Abraham Lucas"},WR1:{c:"Ohio State",n:"Jaxon Smith-Njigba"},WR2:{c:"Eastern Washington",n:"Cooper Kupp"},TE:{c:"Michigan",n:"AJ Barner"},RB:{c:"UCLA",n:"Zach Charbonnet"},QB:{c:"USC",n:"Sam Darnold"}}},
+  {name:"New York Jets",p:{LT:{c:"Penn State",n:"Olu Fashanu"},LG:{c:"Clemson",n:"John Simpson"},C:{c:"Ohio State",n:"Josh Myers"},RG:{c:"USC",n:"Alijah Vera-Tucker"},RT:{c:"Missouri",n:"Armand Membou"},WR1:{c:"Ohio State",n:"Garrett Wilson"},WR2:{c:"Texas A&M",n:"Josh Reynolds"},TE:{c:"LSU",n:"Mason Taylor"},RB:{c:"Iowa State",n:"Breece Hall"},QB:{c:"Ohio State",n:"Justin Fields"}}},
+  {name:"New England Patriots",p:{LT:{c:"LSU",n:"Will Campbell"},LG:{c:"Georgia",n:"Jared Wilson"},C:{c:"NC State",n:"Garrett Bradbury"},RG:{c:"Michigan",n:"Mike Onwenu"},RT:{c:"Virginia",n:"Morgan Moses"},WR1:{c:"Maryland",n:"Stefon Diggs"},WR2:{c:"LSU",n:"Kayshon Boutte"},TE:{c:"Arkansas",n:"Hunter Henry"},RB:{c:"Oklahoma",n:"Rhamondre Stevenson"},QB:{c:"North Carolina",n:"Drake Maye"}}},
+  {name:"Denver Broncos",p:{LT:{c:"Utah",n:"Garett Bolles"},LG:{c:"Oklahoma",n:"Ben Powers"},C:{c:"Washington",n:"Luke Wattenburg"},RG:{c:"Wisconsin-Whitewater",n:"Quinn Meinerz"},RT:{c:"Notre Dame",n:"Mike McGlinchey"},WR1:{c:"SMU",n:"Courtland Sutton"},WR2:{c:"Oregon",n:"Troy Franklin"},TE:{c:"Ole Miss",n:"Evan Engram"},RB:{c:"Ohio State",n:"JK Dobbins"},QB:{c:"Oregon",n:"Bo Nix"}}},
+  {name:"Las Vegas Raiders",p:{LT:{c:"UCLA",n:"Kolton Miller"},LG:{c:"Memphis",n:"Dylan Parham"},C:{c:"Humboldt State",n:"Alex Cappa"},RG:{c:"Oregon",n:"Jackson Powers-Johnson"},RT:{c:"Maryland",n:"DJ Glaze"},WR1:{c:"Cincinnati",n:"Tre Tucker"},WR2:{c:"TCU",n:"Jack Bech"},TE:{c:"Georgia",n:"Brock Bowers"},RB:{c:"Boise State",n:"Ashton Jeanty"},QB:{c:"West Virginia",n:"Geno Smith"}}},
+  {name:"Los Angeles Chargers",p:{LT:{c:"Northwestern",n:"Rashawn Slater"},LG:{c:"Boston College",n:"Zion Johnson"},C:{c:"UCLA",n:"Andre James"},RG:{c:"Louisville",n:"Mekhi Becton"},RT:{c:"Notre Dame",n:"Joe Alt"},WR1:{c:"Georgia",n:"Ladd McConkey"},WR2:{c:"TCU",n:"Quentin Johnston"},TE:{c:"Syracuse",n:"Orande Gadsden"},RB:{c:"North Carolina",n:"Omarion Hampton"},QB:{c:"Oregon",n:"Justin Herbert"}}},
+  {name:"Atlanta Falcons",p:{LT:{c:"Texas A&M",n:"Jake Matthews"},LG:{c:"Syracuse",n:"Matthew Bergeron"},C:{c:"Appalachian State",n:"Ryan Neuzil"},RG:{c:"Boston College",n:"Chris Lindstrom"},RT:{c:"Washington",n:"Kaleb McGary"},WR1:{c:"USC",n:"Drake London"},WR2:{c:"Tulane",n:"Darnell Mooney"},TE:{c:"Florida",n:"Kyle Pitts"},RB:{c:"Texas",n:"Bijan Robinson"},QB:{c:"Washington",n:"Michael Penix Jr."}}},
+  {name:"Carolina Panthers",p:{LT:{c:"NC State",n:"Ikem Ekwonu"},LG:{c:"LSU",n:"Damien Lewis"},C:{c:"Tennessee",n:"Cade Mays"},RG:{c:"Louisiana",n:"Robert Hunt"},RT:{c:"Western Michigan",n:"Taylor Moton"},WR1:{c:"Arizona",n:"Tetairoa McMillan"},WR2:{c:"South Carolina",n:"Xavier Legette"},TE:{c:"Texas",n:"Ja'Tavion Sanders"},RB:{c:"Oklahoma State",n:"Chuba Hubbard"},QB:{c:"Alabama",n:"Bryce Young"}}},
+  {name:"New Orleans Saints",p:{LT:{c:"Texas",n:"Kelvin Banks Jr."},LG:{c:"North Dakota State",n:"Dillon Radunz"},C:{c:"Texas A&M",n:"Erik McCoy"},RG:{c:"Michigan",n:"Cesar Ruiz"},RT:{c:"Oregon State",n:"Taliese Fuaga"},WR1:{c:"Ohio State",n:"Chris Olave"},WR2:{c:"Utah",n:"Devaughn Vele"},TE:{c:"Oregon",n:"Juwan Johnson"},RB:{c:"Tennessee",n:"Alvin Kamara"},QB:{c:"Louisville",n:"Tyler Shough"}}},
+  {name:"Tampa Bay Buccaneers",p:{LT:{c:"Iowa",n:"Tristan Wirfs"},LG:{c:"Michigan",n:"Ben Bredeson"},C:{c:"Duke",n:"Graham Barton"},RG:{c:"North Dakota State",n:"Cody Mauch"},RT:{c:"Central Michigan",n:"Luke Goedeke"},WR1:{c:"Texas A&M",n:"Mike Evans"},WR2:{c:"Penn State",n:"Chris Godwin"},TE:{c:"Washington",n:"Cade Otton"},RB:{c:"Oregon",n:"Bucky Irving"},QB:{c:"Oklahoma",n:"Baker Mayfield"}}},
+  {name:"Arizona Cardinals",p:{LT:{c:"Ohio State",n:"Paris Johnson Jr."},LG:{c:"SMU",n:"Evan Brown"},C:{c:"Arkansas",n:"Hjalte Froholdt"},RG:{c:"UTEP",n:"Will Hernandez"},RT:{c:"Alabama",n:"Jonah Williams"},WR1:{c:"Ohio State",n:"Marvin Harrison Jr."},WR2:{c:"Stanford",n:"Michael Wilson"},TE:{c:"Colorado State",n:"Trey McBride"},RB:{c:"Pittsburgh",n:"James Conner"},QB:{c:"NC State",n:"Jacoby Brissett"}}},
+  {name:"Houston Texans",p:{LT:{c:"Minnesota",n:"Aireontae Ersery"},LG:{c:"Notre Dame",n:"Jarrett Patterson"},C:{c:"Troy",n:"Jake Andrews"},RG:{c:"LSU",n:"Ed Ingram"},RT:{c:"Florida",n:"Trent Brown"},WR1:{c:"Michigan",n:"Nico Collins"},WR2:{c:"Iowa State",n:"Jayden Higgins"},TE:{c:"Stanford",n:"Dalton Schultz"},RB:{c:"Iowa State",n:"David Montgomery"},QB:{c:"Ohio State",n:"C.J. Stroud"}}},
+  {name:"Indianapolis Colts",p:{LT:{c:"Central Michigan",n:"Bernhard Raimann"},LG:{c:"Notre Dame",n:"Quenton Nelson"},C:{c:"Wisconsin",n:"Tanor Bortolini"},RG:{c:"Pittsburgh",n:"Matt Goncalves"},RT:{c:"Auburn",n:"Braden Smith"},WR1:{c:"USC",n:"Michael Pittman Jr."},WR2:{c:"North Carolina",n:"Josh Downs"},TE:{c:"Penn State",n:"Tyler Warren"},RB:{c:"Wisconsin",n:"Jonathan Taylor"},QB:{c:"Duke",n:"Daniel Jones"}}},
+  {name:"Jacksonville Jaguars",p:{LT:{c:"Wisconsin",n:"Cole Van Lanen"},LG:{c:"Boise State",n:"Ezra Cleveland"},C:{c:"Notre Dame",n:"Robert Hainsey"},RG:{c:"California",n:"Patrick Mekari"},RT:{c:"Oklahoma",n:"Anton Harrison"},WR1:{c:"LSU",n:"Brian Thomas Jr."},WR2:{c:"NC State",n:"Jakobi Meyers"},TE:{c:"Penn State",n:"Brenton Strange"},RB:{c:"Clemson",n:"Travis Etienne"},QB:{c:"Clemson",n:"Trevor Lawrence"}}},
+  {name:"Tennessee Titans",p:{LT:{c:"Texas A&M",n:"Dan Moore Jr."},LG:{c:"Northwestern",n:"Peter Skoronski"},C:{c:"Chattanooga",n:"Corey Levin"},RG:{c:"Wisconsin",n:"Kevin Zeitler"},RT:{c:"Alabama",n:"JC Latham"},WR1:{c:"Alabama",n:"Calvin Ridley"},WR2:{c:"Stanford",n:"Elic Ayomanor"},TE:{c:"Maryland",n:"Chigoziem Okonkwo"},RB:{c:"Memphis",n:"Tony Pollard"},QB:{c:"Miami",n:"Cam Ward"}}},
+  {name:"Cleveland Browns",p:{LT:{c:"Alabama",n:"Cam Robinson"},LG:{c:"Nevada",n:"Joel Bitonio"},C:{c:"LSU",n:"Ethan Pocic"},RG:{c:"Virginia Tech",n:"Wyatt Teller"},RT:{c:"Alabama State",n:"Tytus Howard"},WR1:{c:"Alabama",n:"Jerry Jeudy"},WR2:{c:"Tennessee",n:"Cedric Tillman"},TE:{c:"Miami",n:"David Njoku"},RB:{c:"Ohio State",n:"Quinshon Judkins"},QB:{c:"Colorado",n:"Shedeur Sanders"}}},
+  {name:"New York Giants",p:{LT:{c:"Georgia",n:"Andrew Thomas"},LG:{c:"Michigan",n:"Jon Runyan"},C:{c:"Minnesota",n:"John Michael Schmitz"},RG:{c:"Penn",n:"Greg Van Roten"},RT:{c:"Texas A&M",n:"Jermaine Eluemunor"},WR1:{c:"LSU",n:"Malik Nabers"},WR2:{c:"Kentucky",n:"Wan'Dale Robinson"},TE:{c:"Penn State",n:"Theo Johnson"},RB:{c:"Arizona State",n:"Cam Skattebo"},QB:{c:"Ole Miss",n:"Jaxson Dart"}}},
 ];
 
 const NFL_TEAMS = TEAMS.map(t=>t.name).sort();
 const PRE_SHOW    = ["LT","LG","C","RG","RT"];
-const WAVES       = [["TE","WR3"],["WR1","WR2"],["QB","RB"]];
-const WAVE_LABELS = ["TE + SLOT","WR1 + WR2","QB + RB"];
+const WAVES       = [["TE","WR2"],["WR1"],["RB"],["QB"]];
+const WAVE_LABELS = ["TE + WR2","WR1","RB","QB"];
 const TIERS = [
-  {label:"SAVANT", emoji:"🟩",pts:100},
-  {label:"SCHOLAR",emoji:"🟦",pts:75},
-  {label:"STARTER",emoji:"🟨",pts:50},
-  {label:"ROOKIE", emoji:"🟧",pts:25},
+  {label:"SAVANT",      emoji:"🟩",pts:100},
+  {label:"SCHOLAR",     emoji:"🟦",pts:75},
+  {label:"STARTER",     emoji:"🟨",pts:50},
+  {label:"ROOKIE",      emoji:"🟧",pts:25},
+  {label:"BENCHWARMER", emoji:"🟫",pts:10},
 ];
 const WATER = {label:"WATERBOY",emoji:"⬛",pts:0};
 const ROUNDS = 4;
@@ -504,29 +507,22 @@ function renderFormation(){
   const el=document.getElementById('formation');
   el.innerHTML='';
 
-  // Row 1: WR1 · QB · WR2
-  const r1=document.createElement('div');r1.className='formation-row';
-  ['WR1','QB','WR2'].forEach(pos=>{
-    r1.appendChild(makeBadge(pos,team.p[pos].c,shown.includes(pos),flashPos.includes(pos)));
+  // Row 1: O-LINE (always revealed)
+  const r1=document.createElement('div');r1.className='formation-row oline';
+  ['LT','LG','C','RG','RT'].forEach(pos=>{
+    r1.appendChild(makeBadge(pos,team.p[pos].c,true,false));
   });
   el.appendChild(r1);
-
-  // Row 2: O-LINE
-  const r2=document.createElement('div');r2.className='formation-row oline';
-  ['LT','LG','C','RG','RT'].forEach(pos=>{
-    r2.appendChild(makeBadge(pos,team.p[pos].c,true,false));
-  });
-  el.appendChild(r2);
 
   // LOS
   const los=document.createElement('div');los.className='los';el.appendChild(los);
 
-  // Row 3: WR3 · RB · TE
-  const r3=document.createElement('div');r3.className='formation-row';
-  ['WR3','RB','TE'].forEach(pos=>{
-    r3.appendChild(makeBadge(pos,team.p[pos].c,shown.includes(pos),flashPos.includes(pos)));
+  // Row 2: WR1 · RB · QB · TE · WR2 (revealed progressively)
+  const r2=document.createElement('div');r2.className='formation-row';
+  ['WR1','RB','QB','TE','WR2'].forEach(pos=>{
+    r2.appendChild(makeBadge(pos,team.p[pos].c,shown.includes(pos),flashPos.includes(pos)));
   });
-  el.appendChild(r3);
+  el.appendChild(r2);
 }
 
 function renderActions(){
@@ -753,9 +749,5 @@ fetchLeaderboard('lb-intro-list');
 </script>
 </body>
 </html>
-
-
-
-
 
 
