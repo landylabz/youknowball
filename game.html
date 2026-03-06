@@ -184,9 +184,12 @@ async function init() {
     if (error) throw error;
     const cols = await sb.from('players').select('college');
     if (cols.data) COLLEGES = [...new Set(cols.data.map(p => p.college))].sort();
-    const t1 = seededShuffle(data.filter(p => p.difficulty_tier === '1'), daySeed);
-    const t2 = seededShuffle(data.filter(p => p.difficulty_tier === '2'), daySeed + 1);
-    const t3 = seededShuffle(data.filter(p => p.difficulty_tier === '3'), daySeed + 2);
+    const { data: logData } = await sb.from('daily_game_log').select('player_names').gte('day_number', dayNum - 14);
+    const recentlyUsed = new Set((logData || []).flatMap(row => row.player_names || []));
+    const eligible = data.filter(p => !recentlyUsed.has(p.name));
+    const t1 = seededShuffle(eligible.filter(p => p.difficulty_tier === '1'), daySeed);
+    const t2 = seededShuffle(eligible.filter(p => p.difficulty_tier === '2'), daySeed + 1);
+    const t3 = seededShuffle(eligible.filter(p => p.difficulty_tier === '3'), daySeed + 2);
     const pool = [...t1.slice(0,3), ...t2.slice(0,4), ...t3.slice(0,3)];
     if (pool.length < 10) {
       const all = seededShuffle(data, daySeed);
@@ -195,7 +198,9 @@ async function init() {
         if (pool.length >= 10) break;
       }
     }
-    dayPlayers = pool.slice(0, 10);
+    dayPlayers = pool.slice(0, 10); 
+await sb.from('daily_game_log').upsert({ day_number: dayNum, game_date: new Date().toISOString().split('T')[0], player_names: dayPlayers.map(p => p.name) }, { onConflict: 'day_number' });
+
   } catch(err) {
     console.error('Failed to load players:', err);
     dayPlayers = [];
@@ -599,6 +604,9 @@ init();
 </script>
 </body>
 </html>
+
+
+
 
 
 

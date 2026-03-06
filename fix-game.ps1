@@ -1,0 +1,3 @@
+$c = Get-Content "game.html" -Raw
+$c = $c -replace "const \{ data: logData \} = await sb\.from\('daily_game_log'\)\.select\('player_names'\)\.gte\('day_number', dayNum - 14\);\s+const t2", "const { data: logData } = await sb.from('daily_game_log').select('player_names').gte('day_number', dayNum - 14);`n    const recentlyUsed = new Set((logData || []).flatMap(row => row.player_names || []));`n    const eligible = data.filter(p => !recentlyUsed.has(p.name));`n    const t1 = seededShuffle(eligible.filter(p => p.difficulty_tier === '1'), daySeed);`n    const t2"
+$c | Set-Content "game.html"
