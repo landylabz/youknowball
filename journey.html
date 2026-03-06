@@ -386,7 +386,12 @@ function submit(override) {
     setTimeout(()=>{ S.flash=null; S.results.push({player:p,pts,reveals:S.reveals,correct:true}); advance(); },500);
   } else {
     S.wrong=(S.wrong||0)+1; S.flash='wrong'; render();
-    setTimeout(()=>{ S.flash=null; render(); },400);
+    setTimeout(()=>{
+      S.flash=null;
+      const p=players[S.round];
+      if(S.reveals>=p.career_stops.length){ S.results.push({player:p,pts:0,reveals:S.reveals,correct:false}); advance(); }
+      else { render(); }
+    },600);
   }
 }
 
@@ -403,3 +408,4 @@ init();
 </script>
 </body>
 </html>
+
