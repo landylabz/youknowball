@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>The Journey — YouKnowBall.io</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,600&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --red:#FF1200; --black:#0A0A0A; --dark:#1A1A1A; --slate:#2E2E2E; --ash:#555; --white:#F5F5F5;
+      --font-d:'Bebas Neue',sans-serif; --font-h:'Barlow Condensed',sans-serif; --font-b:'Barlow',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--black);min-height:100vh;display:flex;justify-content:center;font-family:var(--font-b);-webkit-font-smoothing:antialiased}
+    #root{width:100%;max-width:480px;min-height:100vh;background:var(--black);color:var(--white);display:flex;flex-direction:column;position:relative}
+    .header{background:var(--red);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .wordmark{font-family:var(--font-d);font-size:26px;letter-spacing:2px;color:var(--white);line-height:1;text-decoration:none}
+    .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+    .header-mode{font-family:var(--font-d);font-size:20px;letter-spacing:1px;color:rgba(255,255,255,.75);line-height:1}
+    .header-sub{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4)}
+    .progress{background:var(--dark);padding:10px 20px;display:flex;gap:5px;border-bottom:1px solid var(--slate)}
+    .pip{flex:1;height:4px;border-radius:2px;background:var(--slate);transition:background .4s}
+    .pip.savant{background:#22c55e} .pip.scholar{background:#4ade80} .pip.starter{background:#facc15}
+    .pip.rookie{background:#f97316} .pip.miss{background:#ef4444} .pip.current{background:rgba(255,18,0,.4)}
+    .rules-wrap{padding:28px 20px 40px;display:flex;flex-direction:column;gap:22px}
+    .rules-eyebrow{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--red)}
+    .rules-title{font-family:var(--font-d);font-size:46px;letter-spacing:2px;color:var(--white);line-height:1}
+    .rules-sub{font-size:13px;color:var(--ash);line-height:1.6;margin-top:-8px}
+    .rules-list{display:flex;flex-direction:column}
+    .rule-row{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)}
+    .rule-row:last-child{border-bottom:none}
+    .rule-icon{font-size:20px;min-width:28px;text-align:center;margin-top:1px}
+    .rule-title{font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px}
+    .rule-text{font-size:12px;color:var(--ash);line-height:1.5}
+    .scoring-grid{display:flex;justify-content:space-between;background:var(--dark);border:1px solid var(--slate);border-radius:14px;padding:16px 12px}
+    .score-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+    .score-emoji{font-size:18px} .score-label{font-family:var(--font-h);font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--white)}
+    .score-pts{font-size:10px;color:var(--ash)}
+    .btn-play{width:100%;background:var(--red);border:none;border-radius:12px;padding:18px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
+    .btn-play:hover{background:#e01000;transform:translateY(-1px)}
+    .game-wrap{padding:20px;display:flex;flex-direction:column;gap:14px;flex:1}
+    .round-counter{display:flex;justify-content:space-between;align-items:flex-end}
+    .round-label{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
+    .round-num{font-family:var(--font-d);font-size:18px;letter-spacing:2px;color:var(--red)}
+    .pts-val{font-family:var(--font-d);font-size:24px;letter-spacing:2px;color:var(--white);transition:color .3s}
+    .pts-val.dropping{color:var(--red)}
+    .trail-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+    .trail-card.flash-correct{border-color:#22c55e;box-shadow:0 0 0 1px #22c55e,0 0 32px rgba(34,197,94,.15);animation:popCorrect .5s ease}
+    .trail-card.flash-wrong{border-color:var(--red);box-shadow:0 0 0 1px var(--red);animation:shake .35s ease}
+    @keyframes popCorrect{0%,100%{transform:scale(1)}40%{transform:scale(1.015)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+    .trail-header{padding:16px 18px 14px;border-bottom:1px solid var(--slate)}
+    .trail-meta{font-size:8px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:8px}
+    .trail-open{display:flex;gap:10px}
+    .open-pill{background:rgba(255,18,0,.08);border:1px solid rgba(255,18,0,.2);border-radius:8px;padding:6px 14px;display:flex;flex-direction:column;gap:2px}
+    .open-pill-label{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,18,0,.7)}
+    .open-pill-val{font-family:var(--font-h);font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
+    .trail-stops{padding:14px 18px;display:flex;flex-direction:column;gap:0}
+    .stop-row{display:flex;align-items:center;gap:10px;padding:5px 0}
+    .stop-num{font-family:var(--font-d);font-size:12px;color:#444;min-width:18px;text-align:right}
+    .stop-revealed{display:flex;align-items:center;gap:10px;flex:1;animation:stopIn .35s cubic-bezier(.16,1,.3,1) both}
+    @keyframes stopIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+    .stop-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
+    .stop-name{font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
+    .stop-hidden{flex:1;display:flex;align-items:center;gap:10px}
+    .stop-line{flex:1;height:1px;border-top:1px dashed #2a2a2a}
+    .stop-lock{font-size:9px;color:#2a2a2a;font-weight:700;letter-spacing:2px}
+    .stop-connector{width:1px;height:10px;background:#2a2a2a;margin-left:28px}
+    .btn-reveal{width:100%;background:transparent;border:1px dashed #2e2e2e;border-radius:10px;padding:12px 16px;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-reveal:hover:not(:disabled){border-color:var(--red);color:var(--red)}
+    .btn-reveal:disabled{opacity:.25;cursor:not-allowed}
+    .btn-reveal .cost{color:var(--red);font-family:var(--font-d);font-size:14px;letter-spacing:1px}
+    .input-wrap{position:relative}
+    .guess-input{width:100%;background:var(--dark);border:1.5px solid var(--slate);border-radius:12px;padding:15px 18px;font-family:var(--font-h);font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--white);outline:none;transition:border-color .2s;-webkit-appearance:none;caret-color:var(--red)}
+    .guess-input:focus{border-color:var(--red)}
+    .guess-input::placeholder{color:#2e2e2e;font-size:15px;text-transform:none;font-family:var(--font-b);font-weight:500;letter-spacing:0}
+    .suggestions{position:absolute;top:100%;left:0;right:0;background:#111;border:1px solid var(--slate);border-radius:0 0 12px 12px;overflow:hidden;z-index:50;box-shadow:0 12px 40px rgba(0,0,0,.7)}
+    .suggestion{padding:12px 18px;font-family:var(--font-h);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--white);cursor:pointer;border-bottom:1px solid var(--slate);transition:background .1s}
+    .suggestion:last-child{border-bottom:none}
+    .suggestion:hover{background:rgba(255,18,0,.1);color:var(--red)}
+    .btn-submit{width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
+    .btn-submit:hover{background:#e01000;transform:translateY(-1px)}
+    .between{display:flex;flex-direction:column;align-items:center;padding:36px 20px;gap:18px;flex:1;animation:fadeUp .4s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .between-card{width:100%;background:var(--dark);border:1px solid var(--slate);border-radius:20px;padding:30px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+    .between-emoji{font-size:52px} .between-tier{font-family:var(--font-d);font-size:38px;letter-spacing:4px}
+    .between-pts{font-family:var(--font-d);font-size:20px;letter-spacing:2px;color:var(--ash)}
+    .between-player{font-family:var(--font-h);font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+    .between-detail{font-size:11px;color:var(--ash);letter-spacing:2px;text-transform:uppercase}
+    .full-trail{width:100%;background:var(--dark);border:1px solid var(--slate);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+    .trail-row{display:flex;align-items:center;gap:10px;padding:3px 0;animation:stopIn .3s ease both}
+    .trail-row-num{font-family:var(--font-d);font-size:12px;color:#444;min-width:18px;text-align:right}
+    .trail-row-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
+    .trail-row-name{font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
+    .trail-connector-sm{width:1px;height:8px;background:#2a2a2a;margin-left:28px}
+    .next-pulse{font-size:10px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--ash);animation:blink 1.2s ease infinite}
+    @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+    .results{display:flex;flex-direction:column;gap:14px;padding:22px 20px;animation:fadeUp .5s ease}
+    .results-hero{background:var(--red);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;overflow:hidden}
+    .results-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.03) 39px,rgba(255,255,255,.03) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.03) 39px,rgba(255,255,255,.03) 40px)}
+    .res-label{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.4);position:relative}
+    .res-score{font-family:var(--font-d);font-size:76px;color:var(--white);line-height:1;position:relative;letter-spacing:2px}
+    .res-max{font-size:11px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.45);position:relative}
+    .emoji-strip{display:flex;gap:6px;justify-content:center;position:relative}
+    .emoji-strip span{font-size:22px}
+    .result-list{display:flex;flex-direction:column;gap:3px}
+    .result-row{background:var(--dark);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:12px}
+    .res-emj{font-size:18px;min-width:22px;text-align:center}
+    .res-info{flex:1}
+    .res-name{font-family:var(--font-h);font-size:15px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px}
+    .res-detail{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-top:2px}
+    .res-pts{font-family:var(--font-d);font-size:22px;letter-spacing:1px}
+    .share-box{background:var(--dark);border:1px solid var(--slate);border-radius:14px;padding:18px}
+    .share-text{font-family:monospace;font-size:12px;color:var(--ash);white-space:pre-wrap;line-height:1.7;margin-bottom:14px}
+    .btn-share{width:100%;background:var(--red);border:2px solid transparent;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
+    .btn-share:hover{background:#e01000}
+    .btn-share.copied{background:transparent;color:var(--red);border-color:var(--red)}
+    .btn-again{width:100%;background:transparent;border:1.5px solid var(--slate);border-radius:12px;padding:14px;font-family:var(--font-h);font-size:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .2s}
+    .btn-again:hover{border-color:var(--white);color:var(--white)}
+    .midnight-note{text-align:center;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#2a2a2a;padding-bottom:16px}
+    .loading-screen{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+    .loading-text{font-family:var(--font-d);font-size:28px;letter-spacing:4px;color:var(--red);animation:blink 1.2s ease infinite}
+    .loading-sub{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#2a2a2a}
+  </style>
+</head>
+<body>
+<div id="root">
+  <header class="header">
+    <a href="/" class="wordmark">YOUKNOWBALL.</a>
+    <div class="header-right">
+      <div class="header-mode">THE JOURNEY</div>
+      <div class="header-sub">Career Trail</div>
+    </div>
+  </header>
+  <div class="progress" id="pips"></div>
+  <div id="screen"></div>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://qoxgmscwbtdcvztksjtx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
+);
+
+const ROUNDS = 5;
+const PTS = [100, 75, 50, 25, 10]; // indexed by reveals used
+
+const TIERS = [
+  { name:'SAVANT',  emoji:'🟩', min:100, pipCls:'savant'  },
+  { name:'SCHOLAR', emoji:'🟦', min:75,  pipCls:'scholar' },
+  { name:'STARTER', emoji:'🟨', min:50,  pipCls:'starter' },
+  { name:'ROOKIE',  emoji:'🟧', min:25,  pipCls:'rookie'  },
+  { name:'MISS',    emoji:'⬛', min:0,   pipCls:'miss'    },
+];
+
+function getTier(pts) { return TIERS.find(t => pts >= t.min) || TIERS[TIERS.length-1]; }
+
+let players = [], allNames = [];
+let S = { round:0, reveals:0, guess:'', suggs:[], flash:null, results:[], phase:'loading', wrong:0 };
+
+function curPts() { return PTS[Math.min(S.reveals, PTS.length-1)]; }
+function nextPts() { return PTS[Math.min(S.reveals+1, PTS.length-1)]; }
+function getDaySeed() { const d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
+function seededShuffle(arr, seed) {
+  const a=[...arr]; let s=seed;
+  for(let i=a.length-1;i>0;i--){s=(s*1664525+1013904223)&0xffffffff;const j=Math.abs(s)%(i+1);[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+async function init() {
+  render();
+  try {
+    const { data, error } = await sb.from('player_teams').select('*').eq('eligible',true).eq('verified',true);
+    if (error) throw error;
+    if (!data || data.length < ROUNDS) { showErr('Not enough players yet — check back soon!'); return; }
+    allNames = data.map(p => p.player_name).sort();
+    const seed = getDaySeed();
+    const sh = seededShuffle(data, seed);
+    const t1=sh.filter(p=>p.difficulty_tier==='1');
+    const t2=sh.filter(p=>p.difficulty_tier==='2');
+    const t3=sh.filter(p=>p.difficulty_tier==='3');
+    let pool=[...t1.slice(0,2),...t2.slice(0,2),...t3.slice(0,1)];
+    if(pool.length<ROUNDS){ for(const p of sh){ if(!pool.find(x=>x.player_name===p.player_name)) pool.push(p); if(pool.length>=ROUNDS) break; } }
+    players = pool.slice(0,ROUNDS);
+    S.phase = 'rules';
+  } catch(e) { console.error(e); showErr('Failed to load. Try refreshing.'); return; }
+  render();
+}
+
+function showErr(msg) {
+  document.getElementById('screen').innerHTML = `<div class="loading-screen"><div style="font-size:32px">⚠️</div><div style="font-family:var(--font-d);font-size:18px;letter-spacing:3px;color:var(--ash);text-align:center;padding:0 20px">${msg}</div></div>`;
+}
+
+function renderPips() {
+  let h='';
+  for(let i=0;i<ROUNDS;i++){
+    if(i<S.results.length){ const t=getTier(S.results[i].pts); h+=`<div class="pip ${S.results[i].pts>0?t.pipCls:'miss'}"></div>`; }
+    else if(i===S.round&&S.phase==='playing') h+=`<div class="pip current"></div>`;
+    else h+=`<div class="pip"></div>`;
+  }
+  document.getElementById('pips').innerHTML = h;
+}
+
+function render() {
+  renderPips();
+  const el = document.getElementById('screen');
+  if (S.phase==='loading') { el.innerHTML=`<div class="loading-screen"><div class="loading-text">LOADING...</div><div class="loading-sub">Building career trails</div></div>`; return; }
+  if (S.phase==='rules') { renderRules(); return; }
+  if (S.phase==='playing') { renderGame(); return; }
+  if (S.phase==='between') { renderBetween(); return; }
+  if (S.phase==='results') { renderResults(); return; }
+}
+
+function renderRules() {
+  document.getElementById('screen').innerHTML = `
+    <div class="rules-wrap">
+      <div>
+        <div class="rules-eyebrow">New Game Mode</div>
+        <div class="rules-title">THE<br>JOURNEY.</div>
+        <div class="rules-sub" style="margin-top:10px">5 players. Each left a trail. Guess from their career stops.</div>
+      </div>
+      <div class="rules-list">
+        <div class="rule-row"><div class="rule-icon">🎓</div><div><div class="rule-title">Always Open</div><div class="rule-text">College and position are always visible. Start guessing right away.</div></div></div>
+        <div class="rule-row"><div class="rule-icon">📍</div><div><div class="rule-title">Reveal Career Stops</div><div class="rule-text">Teams revealed in chronological order. Each reveal drops your points.</div></div></div>
+        <div class="rule-row"><div class="rule-icon">🏈</div><div><div class="rule-title">Wrong Guesses = Free</div><div class="rule-text">Wrong answers don't cost you — but they don't reveal anything either.</div></div></div>
+        <div class="rule-row"><div class="rule-icon">⚡</div><div><div class="rule-title">Early = Max Points</div><div class="rule-text">Guess with zero reveals for 100 pts. More reveals = lower max.</div></div></div>
+      </div>
+      <div class="scoring-grid">
+        <div class="score-item"><div class="score-emoji">🟩</div><div class="score-label">SAVANT</div><div class="score-pts">100</div></div>
+        <div class="score-item"><div class="score-emoji">🟦</div><div class="score-label">SCHOLAR</div><div class="score-pts">75</div></div>
+        <div class="score-item"><div class="score-emoji">🟨</div><div class="score-label">STARTER</div><div class="score-pts">50</div></div>
+        <div class="score-item"><div class="score-emoji">🟧</div><div class="score-label">ROOKIE</div><div class="score-pts">25</div></div>
+        <div class="score-item"><div class="score-emoji">⬛</div><div class="score-label">MISS</div><div class="score-pts">0</div></div>
+      </div>
+      <button class="btn-play" id="btn-start">LET'S RIDE</button>
+    </div>`;
+  document.getElementById('btn-start').addEventListener('click', () => { S.phase='playing'; render(); });
+}
+
+function renderGame() {
+  const p = players[S.round];
+  const stops = p.career_stops;
+  const revealed = stops.slice(0, S.reveals);
+  const hidden = stops.length - S.reveals;
+  const pts = curPts();
+  const canReveal = S.reveals < stops.length;
+  const cardCls = `trail-card${S.flash==='correct'?' flash-correct':S.flash==='wrong'?' flash-wrong':''}`;
+
+  let stopsHtml = '';
+  revealed.forEach((stop, i) => {
+    stopsHtml += `<div class="stop-row"><div class="stop-num">${i+1}</div><div class="stop-revealed" style="animation-delay:${i*.05}s"><div class="stop-dot"></div><div class="stop-name">${stop}</div></div></div>`;
+    if(i < revealed.length-1 || hidden > 0) stopsHtml += `<div class="stop-connector"></div>`;
+  });
+  for(let i=0;i<hidden;i++){
+    stopsHtml += `<div class="stop-row"><div class="stop-num">${S.reveals+i+1}</div><div class="stop-hidden"><div class="stop-line"></div><div class="stop-lock">LOCKED</div></div></div>`;
+    if(i<hidden-1) stopsHtml += `<div class="stop-connector"></div>`;
+  }
+
+  document.getElementById('screen').innerHTML = `
+    <div class="game-wrap">
+      <div class="round-counter">
+        <div><div class="round-label">Player</div><div class="round-num">${S.round+1} / ${ROUNDS}</div></div>
+        <div style="text-align:right"><div class="round-label">Worth</div><div class="pts-val${pts<100?' dropping':''}">${pts} PTS</div></div>
+      </div>
+      <div class="${cardCls}" id="tc">
+        <div class="trail-header">
+          <div class="trail-meta">CAREER TRAIL — ALWAYS VISIBLE</div>
+          <div class="trail-open">
+            <div class="open-pill"><div class="open-pill-label">College</div><div class="open-pill-val">${p.college}</div></div>
+            <div class="open-pill"><div class="open-pill-label">Position</div><div class="open-pill-val">${p.position}</div></div>
+          </div>
+        </div>
+        <div class="trail-stops">${stopsHtml}</div>
+      </div>
+      ${canReveal
+        ? `<button class="btn-reveal" id="btn-rev"><span>Reveal stop #${S.reveals+1}</span><span class="cost">— drops to ${nextPts()} pts</span></button>`
+        : `<button class="btn-reveal" disabled>All ${stops.length} stops revealed</button>`}
+      <div class="input-wrap">
+        <input class="guess-input" id="gi" value="${S.guess.replace(/"/g,'&quot;')}" placeholder="Type a player name..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+        ${S.suggs.length>0?`<div class="suggestions" id="sl">${S.suggs.map(s=>`<div class="suggestion" data-val="${s}">${s}</div>`).join('')}</div>`:''}
+      </div>
+      <button class="btn-submit" id="bs">SUBMIT</button>
+    </div>`;
+
+  const inp = document.getElementById('gi');
+  if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length,inp.value.length);
+    inp.addEventListener('input',e=>{S.guess=e.target.value;updateSuggs(e.target.value);});
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')submit();}); }
+  document.getElementById('bs')?.addEventListener('click',submit);
+  document.getElementById('btn-rev')?.addEventListener('click',doReveal);
+  document.querySelectorAll('.suggestion').forEach(el=>{ el.addEventListener('mousedown',e=>{e.preventDefault();S.guess=el.dataset.val;S.suggs=[];submit(el.dataset.val);}); });
+}
+
+function renderBetween() {
+  const last = S.results[S.results.length-1];
+  const tier = getTier(last.pts);
+  const p = last.player;
+  const stops = p.career_stops;
+  let trailHtml = '';
+  stops.forEach((stop,i)=>{
+    trailHtml+=`<div class="trail-row" style="animation-delay:${i*.07}s"><div class="trail-row-num">${i+1}</div><div class="trail-row-dot"></div><div class="trail-row-name">${stop}</div></div>`;
+    if(i<stops.length-1) trailHtml+=`<div class="trail-connector-sm"></div>`;
+  });
+
+  document.getElementById('screen').innerHTML = `
+    <div class="between">
+      <div class="between-card">
+        <div class="between-emoji">${last.pts>0?tier.emoji:'⬛'}</div>
+        <div class="between-tier" style="color:${last.pts>0?'#22c55e':'#ef4444'}">${last.pts>0?tier.name:'MISS'}</div>
+        <div class="between-pts">${last.pts>0?'+'+last.pts+' pts':'No points'}</div>
+        <div class="between-player">${p.player_name}</div>
+        <div class="between-detail">${p.college} · ${p.position}</div>
+      </div>
+      <div class="full-trail">
+        <div style="font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-bottom:6px">FULL CAREER TRAIL</div>
+        ${trailHtml}
+      </div>
+      <div class="next-pulse">${S.round+1<ROUNDS?'Next player loading...':'Calculating results...'}</div>
+    </div>`;
+}
+
+function renderResults() {
+  const total = S.results.reduce((s,r)=>s+r.pts,0);
+  const max = ROUNDS*100;
+  const shareText = `The Journey 🗺️\n${S.results.map(r=>getTier(r.pts).emoji).join('')}\n\n${total}/${max} pts\nyouknowball.io/journey.html`;
+
+  document.getElementById('screen').innerHTML = `
+    <div class="results">
+      <div class="results-hero">
+        <div class="res-label">THE JOURNEY · YouKnowBall.io</div>
+        <div class="res-score">${total}</div>
+        <div class="res-max">OUT OF ${max} POINTS</div>
+        <div class="emoji-strip">${S.results.map(r=>`<span>${getTier(r.pts).emoji}</span>`).join('')}</div>
+      </div>
+      <div class="result-list">
+        ${S.results.map(r=>{const t=getTier(r.pts);return`
+          <div class="result-row">
+            <div class="res-emj">${t.emoji}</div>
+            <div class="res-info">
+              <div class="res-name">${r.player.player_name}</div>
+              <div class="res-detail">${r.player.college} · ${r.player.position} · ${r.reveals} reveal${r.reveals!==1?'s':''}</div>
+            </div>
+            <div class="res-pts" style="color:${r.pts>0?'#22c55e':'#555'}">${r.pts}</div>
+          </div>`;}).join('')}
+      </div>
+      <div class="share-box">
+        <div class="share-text" id="st">${shareText}</div>
+        <button class="btn-share" id="bsh">SHARE RESULTS</button>
+      </div>
+      <button class="btn-again" id="bag">PLAY AGAIN</button>
+      <div class="midnight-note">New career trails daily</div>
+    </div>`;
+
+  document.getElementById('bsh').addEventListener('click', async () => {
+    const text = document.getElementById('st').textContent;
+    const btn = document.getElementById('bsh');
+    if(navigator.share){ await navigator.share({title:'The Journey — YouKnowBall.io',text,url:'https://youknowball.io/journey.html'}); }
+    else{ await navigator.clipboard.writeText(text); btn.textContent='COPIED ✓'; btn.classList.add('copied'); setTimeout(()=>{btn.textContent='SHARE RESULTS';btn.classList.remove('copied');},2000); }
+  });
+  document.getElementById('bag').addEventListener('click', ()=>{ S={round:0,reveals:0,guess:'',suggs:[],flash:null,results:[],phase:'rules',wrong:0}; render(); });
+}
+
+function doReveal() {
+  const p = players[S.round];
+  if(S.reveals >= p.career_stops.length) return;
+  S.reveals++; S.suggs=[]; render();
+}
+
+function updateSuggs(val) {
+  if(val.length<2){S.suggs=[];render();return;}
+  const q=val.toLowerCase();
+  S.suggs=allNames.filter(n=>n.toLowerCase().includes(q)).slice(0,6);
+  render();
+}
+
+function submit(override) {
+  const val=(override||S.guess).trim();
+  if(!val) return;
+  const p=players[S.round];
+  const correct = p.player_name.toLowerCase()===val.toLowerCase() || p.player_name.toLowerCase().includes(val.toLowerCase());
+  S.suggs=[];
+  if(correct){
+    const pts=curPts(); S.flash='correct'; render();
+    setTimeout(()=>{ S.flash=null; S.results.push({player:p,pts,reveals:S.reveals,correct:true}); advance(); },500);
+  } else {
+    S.wrong=(S.wrong||0)+1; S.flash='wrong'; render();
+    setTimeout(()=>{ S.flash=null; render(); },400);
+  }
+}
+
+function advance() {
+  S.phase='between'; render();
+  setTimeout(()=>{
+    if(S.round+1>=ROUNDS){ S.phase='results'; }
+    else { S.round++; S.reveals=0; S.guess=''; S.wrong=0; S.phase='playing'; }
+    render();
+  }, 2400);
+}
+
+init();
+</script>
+</body>
+</html>
