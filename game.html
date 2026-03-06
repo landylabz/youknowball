@@ -285,6 +285,7 @@ function render() {
           <div class="between-player">${last.player.name} · ${last.player.position}</div>
         </div>
         <div class="next-pulse">Next player loading...</div>
+        <div id="crowd-insight" style="font-size:11px;font-weight:700;letter-spacing:2px;color:#444;text-transform:uppercase;margin-top:-12px"></div>
       </div>`;
     return;
   }
@@ -428,6 +429,7 @@ function submitGuess(override) {
     setTimeout(() => {
       state.flash = null;
       state.results.push({ player, correct: true, hintsUsed: state.hints, tier });
+      sb.from('player_results').insert({ day_number: dayNum, player_name: player.name, correct: true, hints_used: state.hints }).then(() => {});
       if (state.idx + 1 >= PLAYERS_PER_DAY) { state.phase = "results"; render(); }
       else {
         state.phase = "between"; render();
@@ -444,6 +446,7 @@ function submitGuess(override) {
         state.results.push({ player, correct: false, hintsUsed: state.hints, tier });
         state.suggestions = [];
         state.wrongGuesses = 0;
+        sb.from('player_results').insert({ day_number: dayNum, player_name: player.name, correct: false, hints_used: state.hints }).then(() => {});
         if (state.idx + 1 >= PLAYERS_PER_DAY) { state.phase = "results"; render(); }
         else {
           state.phase = "between"; render();
@@ -604,6 +607,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
