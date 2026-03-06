@@ -35,11 +35,11 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 200;
-      padding: 16px 40px;
+      padding: 16px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(10,10,10,0.88);
+      background: rgba(10,10,10,0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255,255,255,0.04);
     }
@@ -51,21 +51,130 @@
       text-decoration: none;
     }
     .nav-wordmark span { color: var(--red); }
-    .nav-cta {
-      background: var(--red);
-      color: var(--white);
-      font-family: var(--fh);
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      padding: 10px 22px;
-      border-radius: 8px;
+
+    /* Hamburger button */
+    .hamburger {
+      width: 40px; height: 40px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 5px;
+      cursor: pointer; background: none; border: none; padding: 0;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--white); border-radius: 2px;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Drawer */
+    .nav-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 280px;
+      background: var(--dark);
+      border-left: 1px solid var(--slate);
+      z-index: 199;
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+      display: flex; flex-direction: column;
+      padding: 80px 28px 40px;
+      gap: 4px;
+    }
+    .nav-drawer.open { transform: translateX(0); }
+    .nav-overlay {
+      position: fixed; inset: 0; z-index: 198;
+      background: rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .nav-overlay.open { opacity: 1; pointer-events: all; }
+    .drawer-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 5px;
+      text-transform: uppercase; color: var(--ash);
+      margin-bottom: 12px; margin-top: 8px;
+    }
+    .drawer-link {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border-radius: 10px;
+      text-decoration: none; transition: background 0.15s;
+      border: 1px solid transparent;
+    }
+    .drawer-link:hover { background: rgba(255,255,255,0.04); border-color: var(--slate); }
+    .drawer-link-icon { font-size: 20px; min-width: 28px; text-align: center; }
+    .drawer-link-info { display: flex; flex-direction: column; gap: 2px; }
+    .drawer-link-name {
+      font-family: var(--fh); font-size: 17px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 1px; color: var(--white);
+    }
+    .drawer-link-sub { font-size: 10px; color: var(--ash); letter-spacing: 1px; }
+    .drawer-link.active .drawer-link-name { color: var(--red); }
+    .drawer-divider { height: 1px; background: var(--slate); margin: 8px 0; }
+
+    /* ── GAME CARD CAROUSEL ── */
+    .game-carousel-wrap {
+      width: 100%;
+      margin-top: 48px;
+      position: relative;
+      animation: fadeUp 0.7s 0.32s ease both;
+    }
+    .game-carousel {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 16px;
+      padding: 8px 40px 20px;
+    }
+    .game-carousel::-webkit-scrollbar { display: none; }
+    .game-card {
+      flex: 0 0 260px;
+      scroll-snap-align: center;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 28px 24px;
+      display: flex; flex-direction: column; gap: 14px;
       text-decoration: none;
-      transition: background 0.15s, transform 0.15s;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    .game-card:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-4px); }
+    .game-card.featured { border-color: var(--white); background: rgba(255,255,255,0.07); }
+    .game-card-tag {
+      font-size: 9px; font-weight: 700; letter-spacing: 4px;
+      text-transform: uppercase; color: var(--red);
+    }
+    .game-card.featured .game-card-tag { color: rgba(255,255,255,0.5); }
+    .game-card-icon { font-size: 32px; line-height: 1; }
+    .game-card-name {
+      font-family: var(--fd); font-size: 30px; letter-spacing: 2px;
+      color: var(--white); line-height: 1;
+    }
+    .game-card-desc {
+      font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6;
+      flex: 1;
+    }
+    .game-card-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--fh); font-size: 13px; font-weight: 900;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--white); margin-top: 4px;
+    }
+    .game-card.featured .game-card-cta { color: var(--red); }
+    .carousel-dots {
+      display: flex; justify-content: center; gap: 6px; margin-top: 4px;
+    }
+    .carousel-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); transition: all 0.3s;
       cursor: pointer;
     }
-    .nav-cta:hover { background: var(--red-dk); transform: translateY(-1px); }
+    .carousel-dot.active { background: var(--white); width: 18px; border-radius: 3px; }
 
     /* ── HERO ── */
     .hero {
@@ -73,7 +182,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 110px 40px 80px;
+      padding: 150px 40px 80px; /* clears fixed nav + ticker */
       position: relative;
       overflow: hidden;
       text-align: center;
@@ -234,10 +343,14 @@
 
     /* ── PROOF STRIP ── */
     .proof-strip {
-      background: var(--dark);
+      background: var(--black);
       border-top: 1px solid var(--slate);
       border-bottom: 1px solid var(--slate);
-      padding: 16px 0; overflow: hidden;
+      padding: 12px 0; overflow: hidden;
+      position: fixed;
+      top: 57px;
+      left: 0; right: 0;
+      z-index: 199;
     }
     .proof-track {
       display: flex; gap: 48px;
@@ -377,7 +490,7 @@
       footer { padding: 32px 24px; }
     }
     @media (max-width: 600px) {
-      .hero { padding: 100px 24px 60px; }
+      .hero { padding: 148px 24px 60px; }
       .steps { grid-template-columns: 1fr; }
       .hero-phone-frame { width: 240px; }
       .hero-share-bubble { right: -8px; min-width: 160px; }
@@ -387,9 +500,41 @@
 </head>
 <body>
 
+  <!-- NAV OVERLAY -->
+  <div class="nav-overlay" id="navOverlay"></div>
+
+  <!-- DRAWER -->
+  <div class="nav-drawer" id="navDrawer">
+    <div class="drawer-label">Games</div>
+    <a href="/game.html" class="drawer-link active">
+      <div class="drawer-link-icon">🏈</div>
+      <div class="drawer-link-info"><div class="drawer-link-name">Daily Game</div><div class="drawer-link-sub">10 players · Guess their college</div></div>
+    </a>
+    <a href="/streaker.html" class="drawer-link">
+      <div class="drawer-link-icon">🔥</div>
+      <div class="drawer-link-info"><div class="drawer-link-name">Streaker</div><div class="drawer-link-sub">Endless mode · Build your streak</div></div>
+    </a>
+    <a href="/pitstops.html" class="drawer-link">
+      <div class="drawer-link-icon">📍</div>
+      <div class="drawer-link-info"><div class="drawer-link-name">Pit Stops</div><div class="drawer-link-sub">Career trail · Guess the player</div></div>
+    </a>
+    <a href="/nts.html" class="drawer-link">
+      <div class="drawer-link-icon">🏟️</div>
+      <div class="drawer-link-info"><div class="drawer-link-name">Name That Squad</div><div class="drawer-link-sub">Formation · Guess the team</div></div>
+    </a>
+    <div class="drawer-divider"></div>
+    <div class="drawer-label">More</div>
+    <a href="/leaderboard.html" class="drawer-link">
+      <div class="drawer-link-icon">📈</div>
+      <div class="drawer-link-info"><div class="drawer-link-name">Leaderboard</div><div class="drawer-link-sub">Top scores · All time</div></div>
+    </a>
+  </div>
+
   <nav>
-    <a href="#" class="nav-wordmark">YOUKNOWBALL<span>.</span></a>
-    <div style="display:flex;gap:10px;align-items:center"><a href="/leaderboard.html" style="background:transparent;border:none;color:rgba(255,255,255,.5);font-size:11px;font-weight:700;letter-spacing:2px;cursor:pointer;text-decoration:none;padding:8px" title="Leaderboard">&#x1F4C8; Leaderboard</a><a href="/nts.html" class="nav-cta" style="background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7)">Squad</a> <a href="/streaker.html" class="nav-cta" style="background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7)">Streaker</a><a href="/game.html" class="nav-cta">Daily Game</a></div>
+    <a href="/" class="nav-wordmark">YOUKNOWBALL<span>.</span></a>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
 
   <!-- HERO -->
@@ -398,8 +543,48 @@
     <div class="hero-grid"></div>
     <h1 class="hero-wordmark">YOUKNOW<br>BALL<span class="hero-period">.</span></h1>
     
-    <div class="hero-cta-wrap">
-      <a href="/game.html" class="hero-btn">Daily Game</a><a href="/nts.html" class="hero-btn" style="border:1.5px solid rgba(255,255,255,.2)">Name That Squad ???</a> <a href="/streaker.html" class="hero-btn" style="border:1.5px solid rgba(255,255,255,.2)">Streaker</a>
+    <div class="game-carousel-wrap">
+      <div class="game-carousel" id="gameCarousel">
+
+        <a href="/game.html" class="game-card featured">
+          <div class="game-card-tag">⚡ Daily Drop</div>
+          <div class="game-card-icon">🏈</div>
+          <div class="game-card-name">DAILY GAME</div>
+          <div class="game-card-desc">10 NFL players drop every day at midnight. Guess which college they attended. Same players for everyone — no excuses.</div>
+          <div class="game-card-cta">Play Today →</div>
+        </a>
+
+        <a href="/streaker.html" class="game-card">
+          <div class="game-card-tag">🔥 Endless Mode</div>
+          <div class="game-card-icon">📈</div>
+          <div class="game-card-name">STREAKER</div>
+          <div class="game-card-desc">How long can you go? Unlimited players, rising difficulty. One wrong answer and your streak is dead. Post it. Defend it.</div>
+          <div class="game-card-cta">Start Streak →</div>
+        </a>
+
+        <a href="/pitstops.html" class="game-card">
+          <div class="game-card-tag">📍 Career Trail</div>
+          <div class="game-card-icon">🗺️</div>
+          <div class="game-card-name">PIT STOPS</div>
+          <div class="game-card-desc">5 players. Each one bounced around the league. Guess who from their career stops — the earlier you guess, the better your score.</div>
+          <div class="game-card-cta">Hit the Road →</div>
+        </a>
+
+        <a href="/nts.html" class="game-card">
+          <div class="game-card-tag">🏟️ Formation</div>
+          <div class="game-card-icon">🪖</div>
+          <div class="game-card-name">NAME THAT SQUAD</div>
+          <div class="game-card-desc">College logos mapped to offensive formation positions. Identify the NFL team as the roster gets revealed — wave by wave.</div>
+          <div class="game-card-cta">Guess the Squad →</div>
+        </a>
+
+      </div>
+      <div class="carousel-dots" id="carouselDots">
+        <div class="carousel-dot active"></div>
+        <div class="carousel-dot"></div>
+        <div class="carousel-dot"></div>
+        <div class="carousel-dot"></div>
+      </div>
     </div>
 
     <!-- PHONE MOCKUP — lives in hero -->
@@ -464,49 +649,43 @@
       <div class="proof-item"><div class="proof-name">Derek F. 🌵</div><div class="proof-score">🟥⬛🟩🟥🟩🟥🟩⬛🟥🟩</div><div class="proof-tier casual">Casual</div></div>
     </div>
   </div>
-
-  <!-- HOW IT WORKS -->
-  <div class="section-wrap">
-  <section class="section">
-    <div class="section-label">How It Works</div>
-    <h2 class="section-title">Simple.<br><em>Addicting.</em></h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">01</div>
-        <span class="step-icon">🏈</span>
-        <div class="step-heading">10 NFL Players</div>
-        <div class="step-body">Every day at midnight, a new set of 10 players drops. Same players for everyone — no excuses. Starts easy. Gets uncomfortable fast.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <span class="step-icon">🎓</span>
-        <div class="step-heading">Name Their College</div>
-        <div class="step-body">You see the player's name, position, and team. That's it. Type the college. Stuck? Burn a hint — but every hint costs you your tier.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <span class="step-icon">📲</span>
-        <div class="step-heading">Prove Your Tier</div>
-        <div class="step-body">10 players in, you get your title. Share it. Let the group chat know exactly where they stand. Savants are rare. Waterboys are not.</div>
-      </div>
-    </div>
-  </section>
-  </div>
-
-
-  <!-- BOTTOM CTA -->
-  <section class="bottom-cta">
-    <div class="bottom-eyebrow">Free · Daily · No Account Needed</div>
-    <h2 class="bottom-headline">PROVE<br>YOU KNOW<br>BALL.</h2>
-    <a href="/game.html" class="bottom-btn">Daily Game</a><a href="/streaker.html" class="bottom-btn" style="background:#1a1a1a;border:1.5px solid rgba(255,255,255,.15);margin-left:16px">Streaker</a>
-  </section>
-
   <!-- FOOTER -->
   <footer>
     <div class="footer-wm">YOUKNOWBALL.</div>
     <div class="footer-note">youknowball.io · New players daily at midnight</div>
   </footer>
 
+  <script>
+    const hamburger = document.getElementById("hamburger");
+    const drawer = document.getElementById("navDrawer");
+    const overlay = document.getElementById("navOverlay");
+    function toggleMenu(open) {
+      hamburger.classList.toggle("open", open);
+      drawer.classList.toggle("open", open);
+      overlay.classList.toggle("open", open);
+      document.body.style.overflow = open ? "hidden" : "";
+    }
+    hamburger.addEventListener("click", () => toggleMenu(!drawer.classList.contains("open")));
+    overlay.addEventListener("click", () => toggleMenu(false));
+    document.querySelectorAll(".nav-drawer a").forEach(a => a.addEventListener("click", () => toggleMenu(false)));
+    const carousel = document.getElementById("gameCarousel");
+    const dots = document.querySelectorAll(".carousel-dot");
+    function updateDots() {
+      const cards = carousel.querySelectorAll(".game-card");
+      if (!cards.length) return;
+      const cardWidth = cards[0].offsetWidth + 16;
+      const activeIndex = Math.round(carousel.scrollLeft / cardWidth);
+      dots.forEach((d, i) => d.classList.toggle("active", i === activeIndex));
+    }
+    carousel.addEventListener("scroll", updateDots, { passive: true });
+    dots.forEach((dot, i) => {
+      dot.addEventListener("click", () => {
+        const cards = carousel.querySelectorAll(".game-card");
+        const cardWidth = cards[0].offsetWidth + 16;
+        carousel.scrollTo({ left: i * cardWidth, behavior: "smooth" });
+      });
+    });
+  </script>
 </body>
 </html>
 
