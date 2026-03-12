@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -53,6 +53,8 @@
     .actions{display:flex;gap:10px}
     .btn-submit{flex:1;background:var(--red);border:none;border-radius:12px;padding:17px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
     .btn-submit:hover{background:#CC0E00;transform:translateY(-1px)}
+    .btn-claudio{width:100%;background:transparent;border:1.5px solid #333;border-radius:12px;padding:11px;font-family:var(--font-d);font-size:14px;letter-spacing:3px;color:#555;cursor:pointer;transition:all .2s;margin-top:4px}
+    .btn-claudio:hover{border-color:#FF1200;color:#FF1200}
     .between{display:flex;flex-direction:column;align-items:center;padding:40px 20px;gap:20px;animation:fadeUp .4s ease both;flex:1}
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     .between-card{width:100%;background:var(--dark);border:1px solid var(--slate);border-radius:20px;padding:36px 28px;display:flex;flex-direction:column;align-items:center;gap:10px}
@@ -377,6 +379,7 @@ function render() {
       <div class="actions">
         <button class="btn-submit" id="submitBtn">Submit</button>
       </div>
+      <button class="btn-claudio" id="claudioBtn">Claudio's Mercy Button</button>
     </div>`;
 
   const input = document.getElementById("guessInput");
@@ -387,6 +390,7 @@ function render() {
     input.addEventListener("keydown", e => { if (e.key === "Enter") submitGuess(); });
   }
   document.getElementById("submitBtn")?.addEventListener("click", submitGuess);
+  document.getElementById("claudioBtn")?.addEventListener("click", claudioSkip);
   document.getElementById("hintBtn")?.addEventListener("click", () => { if (state.hints < 1) { state.hints++; render(); } });
   document.querySelectorAll(".suggestion").forEach(el => {
     el.addEventListener("mousedown", e => {
@@ -396,6 +400,25 @@ function render() {
       submitGuess(el.dataset.val);
     });
   });
+}
+
+function claudioSkip() {
+  if (state.phase !== 'playing') return;
+  const player = dayPlayers[state.idx];
+  const tier = getTier(state.hints, false);
+  state.flash = 'wrong';
+  state.suggestions = [];
+  render();
+  setTimeout(() => {
+    state.flash = null;
+    state.results.push({ player, correct: false, hintsUsed: state.hints, tier });
+    state.wrongGuesses = 0;
+    if (state.idx + 1 >= PLAYERS_PER_DAY) { state.phase = 'results'; render(); }
+    else {
+      state.phase = 'between'; render();
+      setTimeout(() => { state.idx++; state.hints = 0; state.guess = ''; state.phase = 'playing'; state.wrongGuesses = 0; render(); }, 2200);
+    }
+  }, 600);
 }
 
 function renderPips() {
@@ -510,6 +533,7 @@ function showModal(correct, overall) {
         <button class="btn-modal-submit" id="modalSubmit" disabled>Submit Score</button>
         <button class="btn-modal-skip" id="modalSkip">Skip — maybe next time</button>
       </div>
+      <button class="btn-claudio" id="claudioBtn">Claudio's Mercy Button</button>
     </div>`;
   const inp = document.getElementById('modalInitials');
   const sel = document.getElementById('modalState');
@@ -597,6 +621,7 @@ function showRules() {
         </div>
         <button onclick="document.getElementById('modal-root').innerHTML=''" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer">Got It</button>
       </div>
+      <button class="btn-claudio" id="claudioBtn">Claudio's Mercy Button</button>
     </div>`;
   document.getElementById('rulesOverlay')?.addEventListener('click', e => {
     if (e.target.id === 'rulesOverlay') modalRoot.innerHTML = '';
