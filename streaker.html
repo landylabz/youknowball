@@ -212,7 +212,7 @@ async function init() {
   try {
     const { data, error } = await sb
       .from('players')
-      .select('id, name, college, position, nfl_team, conference, difficulty_tier, jersey_number');
+      .select('id, name, college, position, nfl_team, conference, difficulty_tier, jersey_number').eq('validated', true);
     if (error) throw error;
     allPlayers = data;
     const cols = await sb.from('players').select('college');
@@ -230,8 +230,8 @@ async function init() {
 function getNextPlayer() {
   const tier = getDifficultyTier(state.streak + 1);
   let pool;
-  if (tier === 'easy')   pool = allPlayers.filter(p => p.difficulty_tier === '1');
-  if (tier === 'medium') pool = allPlayers.filter(p => ['1','2'].includes(p.difficulty_tier));
+  if (tier === 'easy')   pool = allPlayers.filter(p => p.difficulty_tier === 'T1');
+  if (tier === 'medium') pool = allPlayers.filter(p => ['T1','T2'].includes(p.difficulty_tier));
   if (tier === 'hard')   pool = allPlayers;
   const available = pool.filter(p => !seenIds.has(p.id));
   if (!available.length) { seenIds.clear(); return pool[Math.floor(Math.random() * pool.length)]; }
@@ -627,5 +627,6 @@ init();
 </script>
 </body>
 </html>
+
 
 

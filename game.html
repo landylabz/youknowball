@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -189,9 +189,9 @@ async function init() {
     const { data: logData } = await sb.from('daily_game_log').select('player_names').gte('day_number', dayNum - 14);
     const recentlyUsed = new Set((logData || []).flatMap(row => row.player_names || []));
     const eligible = data.filter(p => !recentlyUsed.has(p.name));
-    const t1 = seededShuffle(eligible.filter(p => p.difficulty_tier === '1'), daySeed);
-    const t2 = seededShuffle(eligible.filter(p => p.difficulty_tier === '2'), daySeed + 1);
-    const t3 = seededShuffle(eligible.filter(p => p.difficulty_tier === '3'), daySeed + 2);
+    const t1 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T1'), daySeed);
+    const t2 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T2'), daySeed + 1);
+    const t3 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T3'), daySeed + 2);
     const pool = [...t1.slice(0,3), ...t2.slice(0,4), ...t3.slice(0,3)];
     if (pool.length < 10) {
       const all = seededShuffle(data, daySeed);

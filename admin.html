@@ -224,9 +224,9 @@ function getFilteredPlayers() {
   let players = [...allPlayers];
   if (currentFilter === 'validated') players = players.filter(p => p.validated);
   if (currentFilter === 'unvalidated') players = players.filter(p => !p.validated);
-  if (currentFilter === 't1') players = players.filter(p => p.difficulty_tier === '1');
-  if (currentFilter === 't2') players = players.filter(p => p.difficulty_tier === '2');
-  if (currentFilter === 't3') players = players.filter(p => p.difficulty_tier === '3');
+  if (currentFilter === 't1') players = players.filter(p => p.difficulty_tier === 'T1');
+  if (currentFilter === 't2') players = players.filter(p => p.difficulty_tier === 'T2');
+  if (currentFilter === 't3') players = players.filter(p => p.difficulty_tier === 'T3');
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     players = players.filter(p => p.name.toLowerCase().includes(q) || p.college?.toLowerCase().includes(q));
@@ -248,7 +248,7 @@ function renderTable() {
 
 function renderRow(p, i) {
   const isEditing = editingId === p.id;
-  const tierClass = p.difficulty_tier === '1' ? 't1' : p.difficulty_tier === '2' ? 't2' : 't3';
+  const tierClass = p.difficulty_tier === 'T1' ? 't1' : p.difficulty_tier === 'T2' ? 't2' : 't3';
   const rowClass = p.validated ? 'validated-row' : 'unvalidated-row';
 
   if (isEditing) {
@@ -261,9 +261,9 @@ function renderRow(p, i) {
       <td><input class="edit-input" id="edit-team-${p.id}" value="${p.nfl_team || ''}" placeholder="Team"/></td>
       <td><input class="edit-input" id="edit-conf-${p.id}" value="${p.conference || ''}" placeholder="Conf"/></td>
       <td><select class="edit-input" id="edit-tier-${p.id}" style="width:60px">
-        <option value="1" ${p.difficulty_tier==='1'?'selected':''}>T1</option>
-        <option value="2" ${p.difficulty_tier==='2'?'selected':''}>T2</option>
-        <option value="3" ${p.difficulty_tier==='3'?'selected':''}>T3</option>
+        <option value="T1" ${p.difficulty_tier==='T1'?'selected':''}>T1</option>
+        <option value="T2" ${p.difficulty_tier==='T2'?'selected':''}>T2</option>
+        <option value="T3" ${p.difficulty_tier==='T3'?'selected':''}>T3</option>
       </select></td>
       <td></td>
       <td class="actions">
@@ -283,7 +283,7 @@ function renderRow(p, i) {
     <td><div class="td-pos">${p.position || '—'}</div></td>
     <td style="font-size:12px;color:var(--ash)">${p.nfl_team || '—'}</td>
     <td style="font-size:11px;color:var(--ash)">${p.conference || '—'}</td>
-    <td><span class="td-tier ${tierClass}">T${p.difficulty_tier || '?'}</span></td>
+    <td><span class="td-tier ${tierClass}">${p.difficulty_tier || 'T?'}</span></td>
     <td>${p.validated ? '<span class="validated-badge">\u2705 Valid</span>' : '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash)">Pending</span>'}</td>
     <td class="actions">
       ${!p.validated ? `<button class="btn-validate" data-action="validate" data-id="${p.id}">\u2713 Validate</button>` : `<button class="btn-edit" data-action="unvalidate" data-id="${p.id}">Unvalidate</button>`}
@@ -381,4 +381,5 @@ function showToast(msg, isError = false) {
 </script>
 </body>
 </html>
+
 
