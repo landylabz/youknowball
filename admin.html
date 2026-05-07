@@ -84,7 +84,9 @@
     .btn-cancel{background:transparent;border:1px solid var(--slate);border-radius:6px;padding:7px 10px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);cursor:pointer}
     .btn-remove{background:transparent;border:1px solid #333;border-radius:6px;padding:7px 10px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#444;cursor:pointer;transition:all .15s}
     .btn-remove:hover{border-color:var(--red);color:var(--red)}
-    .validated-badge{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:4px}
+    .validated-badge{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:4px}    .btn-bulk{background:var(--green);border:none;border-radius:8px;padding:7px 16px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#000;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .btn-bulk:hover{opacity:.85}
+    .btn-bulk:disabled{opacity:.3;cursor:not-allowed}
 
     /* TOAST */
     .toast{position:fixed;bottom:24px;right:24px;background:var(--dark);border:1px solid var(--green);border-radius:12px;padding:14px 20px;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--white);z-index:999;animation:toastIn .3s ease;pointer-events:none}
@@ -136,6 +138,7 @@
     <button class="filter-btn" data-filter="t2" id="filterT2">Tier 2</button>
     <button class="filter-btn" data-filter="t3" id="filterT3">Tier 3</button>
     <input class="filter-search" id="searchInput" placeholder="Search player..." type="text"/>
+    <button class="btn-bulk" id="bulkValidateBtn" disabled>Validate All (0)</button>
   </div>
 
   <div class="table-wrap">
@@ -239,11 +242,13 @@ function renderTable() {
   const players = getFilteredPlayers();
   const body = document.getElementById('tableBody');
   if (!players.length) {
-    body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:48px;color:var(--ash);letter-spacing:3px;text-transform:uppercase;font-size:11px">No players found</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" ...>No players found</td></tr>`;
+    updateBulkBtn();
     return;
   }
   body.innerHTML = players.map((p, i) => renderRow(p, i)).join('');
-  attachRowEvents();
+  attachRowEvents(); 
+ updateBulkBtn();
 }
 
 function renderRow(p, i) {
@@ -352,6 +357,41 @@ async function removePlayer(id) {
   renderTable();
   showToast('Player removed');
 }
+
+// ── BULK VALIDATE ─────────────────────────────────────────
+function updateBulkBtn() {
+  const unvalidated = getFilteredPlayers().filter(p => !p.validated);
+  const btn = document.getElementById('bulkValidateBtn');
+  if (!btn) return;
+  btn.textContent = `Validate All (${unvalidated.length})`;
+  btn.disabled = unvalidated.length === 0;
+}
+
+async function bulkValidate() {
+  const unvalidated = getFilteredPlayers().filter(p => !p.validated);
+  if (!unvalidated.length) return;
+  if (!confirm(`Validate ${unvalidated.length} players?`)) return;
+  const now = new Date().toISOString();
+  const ids = unvalidated.map(p => p.id);
+  const BATCH = 100;
+  let done = 0;
+  for (let i = 0; i < ids.length; i += BATCH) {
+    const { error } = await sb.from('players')
+      .update({ validated: true, validated_at: now, validated_by: 'admin-bulk' })
+      .in('id', ids.slice(i, i + BATCH));
+    if (error) { showToast('Batch failed', true); return; }
+    done += Math.min(BATCH, ids.length - i);
+  }
+  unvalidated.forEach(p => {
+    const player = allPlayers.find(x => x.id === p.id);
+    if (player) { player.validated = true; player.validated_at = now; }
+  });
+  updateStats();
+  renderTable();
+  showToast(`✓ Validated ${done} players`);
+}
+
+document.getElementById('bulkValidateBtn').addEventListener('click', bulkValidate);
 
 // ── FILTERS ───────────────────────────────────────────────
 document.querySelectorAll('.filter-btn').forEach(btn => {
