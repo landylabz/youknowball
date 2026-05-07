@@ -1,0 +1,21 @@
+{
+  "name": "youknowball-player-pipeline",
+  "version": "1.0.0",
+  "description": "NFL player seed + weekly roster refresh for YouKnowBall.io",
+  "main": "index.js",
+  "scripts": {
+    "seed": "node 01-fetch-nflverse.js && node 02-build-candidates.js && node 03-upsert-supabase.js",
+    "fetch": "node 01-fetch-nflverse.js",
+    "build": "node 02-build-candidates.js",
+    "upsert": "node 03-upsert-supabase.js",
+    "refresh": "node weekly-roster-refresh.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

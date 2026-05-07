@@ -1,0 +1,32 @@
+name: Weekly Roster Refresh
+
+on:
+  schedule:
+    # Every Tuesday at 10:00 UTC (6am ET) — post-MNF, pre-Wednesday practice reports
+    - cron: '0 10 * * 2'
+  workflow_dispatch: {} # allow manual runs from GitHub UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ./scripts/player-pipeline
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./scripts/player-pipeline/package-lock.json
+
+      - name: Install deps
+        run: npm ci || npm install
+
+      - name: Run weekly roster refresh
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node weekly-roster-refresh.js
