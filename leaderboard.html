@@ -236,7 +236,7 @@
   );
 
   function getDayNum() {
-    return Math.floor((new Date() - new Date("2025-01-01")) / 86400000) + 1;
+    return Math.floor((new Date() - new Date("2026-03-02")) / 86400000) + 1;
   }
 
   const todayNum = getDayNum();
@@ -246,8 +246,8 @@
 
   function setGameType(type) {
     currentGameType = type;
-    document.querySelectorAll('.lb-tabs')[0].querySelectorAll('.lb-tab').forEach((t, i) => {
-      t.classList.toggle('active', (i === 0 && type === 'daily') || (i === 1 && type === 'streaker'));
+    document.querySelectorAll('.lb-tabs')[0].querySelectorAll('.lb-tab').forEach((t) => {
+      t.classList.toggle('active', t.textContent.trim().toLowerCase() === type);
     });
     // Streaker has no "today" tab — only all time makes sense
     const timeTabs = document.getElementById('timeTabs');
@@ -395,7 +395,7 @@
   }
 
   document.getElementById('prevBtn').disabled = currentDay <= 1;
-  loadScores();
+  setGameType('streaker');
 </script>
 </body>
 </html>

@@ -354,7 +354,7 @@ function render() {
         <div class="card-ghost-num">${player.jersey_number || ''}</div>
         <div class="player-number">#${player.jersey_number || '—'}</div>
         <div class="player-name">${player.name}</div>
-        <div class="player-pos">${player.position} · ${player.nfl_team}</div>
+        <div class="player-pos">${player.position} · ${player.nfl_team || 'Free Agent'}</div>
       </div>
       <div class="hints" id="hintsArea">
         ${Array.from({length: hints}).map((_,i) => `
@@ -376,6 +376,7 @@ function render() {
             ${suggestions.map(s => `<div class="suggestion" data-val="${s}">${s}</div>`).join("")}
           </div>` : ""}
       </div>
+      ${(state.wrongGuesses > 0 && state.wrongGuesses < 3) ? '<div style="text-align:center;color:var(--red);font-weight:800;font-size:13px;letter-spacing:1px;margin:10px 0 0">NOT QUITE &mdash; ' + (3 - state.wrongGuesses) + (state.wrongGuesses === 2 ? ' TRY LEFT' : ' TRIES LEFT') + '</div>' : ''}
       <div class="actions">
         <button class="btn-submit" id="submitBtn">Submit</button>
       </div>
@@ -448,6 +449,7 @@ function submitGuess(override) {
   if (correct) {
     const tier = getTier(state.hints, true);
     state.flash = "correct";
+    state.wrongGuesses = 0;
     render();
     setTimeout(() => {
       state.flash = null;

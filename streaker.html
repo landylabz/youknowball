@@ -444,7 +444,7 @@ function render() {
           <div class="card-ghost-num">${player.jersey_number || ''}</div>
           <div class="player-number">#${player.jersey_number || '—'}</div>
           <div class="player-name">${player.name}</div>
-          <div class="player-pos">${player.position} · ${player.nfl_team}</div>
+          <div class="player-pos">${player.position} · ${player.nfl_team || 'Free Agent'}</div>
         </div>
         ${state.hintUsedThisRound ? `
           <div class="hint-revealed">
