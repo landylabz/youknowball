@@ -218,8 +218,8 @@ const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorad
 let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
 const TIERS = [
-  { emoji:"\u2705",       name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
-  { emoji:"\uD83D\uDFE9", name:"SCHOLAR", color:"#4ade80", match:(h,c)=> c && h>=1  },
+  { emoji:"🟩",       name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
+  { emoji:"🟦", name:"SCHOLAR", color:"#3b82f6", match:(h,c)=> c && h>=1  },
   { emoji:"\uD83D\uDFE5", name:"WRONG",   color:"#ef4444", match:(h,c)=> !c && h===0 },
   { emoji:"\uD83D\uDFEA", name:"BURNED",  color:"#a855f7", match:(h,c)=> !c && h>0  },
 ];
@@ -354,9 +354,9 @@ function render() {
               <div style="font-size:12px;color:var(--ash);line-height:1.5">Three wrong guesses on one player and you automatically move on. That one is a loss.</div></div>
             </div>
             <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0">
-              <div style="font-size:20px;min-width:28px">\u2705</div>
+              <div style="font-size:20px;min-width:28px">ℹ️</div>
               <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">Tiers</div>
-              <div style="font-size:12px;color:var(--ash);line-height:1.5">\u2705 Ball Knower &middot; \uD83D\uDFE6 Scholar (hint used) &middot; \uD83D\uDFE5 Wrong &middot; \uD83D\uDFEA Burned</div></div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">🟩 Ball Knower &middot; \uD83D\uDFE6 Scholar (hint used) &middot; \uD83D\uDFE5 Wrong &middot; \uD83D\uDFEA Burned</div></div>
             </div>
           </div>
           <button id="rulesStartBtn" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;margin-top:8px">Let's Go</button>
@@ -566,18 +566,89 @@ function skipPlayer() {
   }
 }
 
+function shareText() {
+  const correct = state.results.filter(r => r.correct).length;
+  const overall = getOverallTier(correct, PLAYERS_PER_DAY, state.results);
+  return `${overall.name} — ${correct}/${PLAYERS_PER_DAY}\n${state.results.map(r => r.tier.emoji).join("")}\nDay #${dayNum} · youknowball.io`;
+}
+
+const TIER_SQUARE = { SAVANT:"#22c55e", SCHOLAR:"#3b82f6", WRONG:"#ef4444", BURNED:"#a855f7" };
+
+async function renderShareCard() {
+  const correct = state.results.filter(r => r.correct).length;
+  const overall = getOverallTier(correct, PLAYERS_PER_DAY, state.results);
+  try { await document.fonts.ready; } catch (e) {}
+  const S = 1080;
+  const cv = document.createElement("canvas");
+  cv.width = S; cv.height = S;
+  const x = cv.getContext("2d");
+  x.fillStyle = "#0A0A0A"; x.fillRect(0, 0, S, S);
+  x.textAlign = "center";
+  x.fillStyle = "#F5F5F5";
+  x.font = '64px "Bebas Neue", sans-serif';
+  x.fillText("YOUKNOWBALL.", S / 2, 154);
+  x.fillStyle = "#FF1200";
+  x.font = "700 22px Barlow, sans-serif";
+  try { x.letterSpacing = "6px"; } catch (e) {}
+  x.fillText("DAY #" + dayNum, S / 2, 214);
+  try { x.letterSpacing = "0px"; } catch (e) {}
+  x.strokeStyle = "#2E2E2E"; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(S / 2 - 60, 264); x.lineTo(S / 2 + 60, 264); x.stroke();
+  x.fillStyle = overall.gradient ? "#FFD700" : overall.color;
+  x.font = '150px "Bebas Neue", sans-serif';
+  const tw = x.measureText(overall.name).width;
+  if (tw > S - 120) x.font = `${Math.floor(150 * (S - 120) / tw)}px "Bebas Neue", sans-serif`;
+  x.fillText(overall.name, S / 2, 430);
+  x.fillStyle = "#F5F5F5";
+  x.font = '56px "Bebas Neue", sans-serif';
+  x.fillText(correct + " / " + PLAYERS_PER_DAY + " CORRECT", S / 2, 520);
+  const sq = 72, gap = 16, rowW = 10 * sq + 9 * gap;
+  let sx = (S - rowW) / 2; const sy = 580;
+  state.results.forEach(r => {
+    x.fillStyle = TIER_SQUARE[r.tier.name] || "#333333";
+    if (x.roundRect) { x.beginPath(); x.roundRect(sx, sy, sq, sq, 16); x.fill(); }
+    else x.fillRect(sx, sy, sq, sq);
+    sx += sq + gap;
+  });
+  x.fillStyle = "#969696";
+  x.font = "italic 600 30px Barlow, sans-serif";
+  x.fillText(overall.line, S / 2, 772);
+  x.fillStyle = "#F5F5F5";
+  x.font = '44px "Bebas Neue", sans-serif';
+  try { x.letterSpacing = "2px"; } catch (e) {}
+  x.fillText("YOUKNOWBALL.IO", S / 2, 900);
+  try { x.letterSpacing = "0px"; } catch (e) {}
+  return new Promise(res => cv.toBlob(res, "image/png"));
+}
+
 async function handleShare() {
-  const emojis = state.results.map(r => r.tier.emoji).join("");
-  const text = `I scored ${emojis} at youknowball.io`;
   const btn = document.getElementById("shareBtn");
+  const text = shareText();
+  try {
+    const blob = await renderShareCard();
+    if (blob) {
+      const file = new File([blob], `youknowball-day${dayNum}.png`, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "YouKnowBall.io", text });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `youknowball-day${dayNum}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      await navigator.clipboard.writeText(text + "\nhttps://youknowball.io");
+      if (btn) { btn.textContent = "Saved ✓"; setTimeout(() => { btn.textContent = "Share Results"; }, 2500); }
+      return;
+    }
+  } catch (e) { console.error("share card failed, falling back to text", e); }
   if (navigator.share) {
     await navigator.share({ title: "YouKnowBall.io", text, url: "https://youknowball.io" });
   } else {
     await navigator.clipboard.writeText(text + "\nhttps://youknowball.io");
-    if (btn) { btn.textContent = "Copied \u2713"; setTimeout(() => { btn.textContent = "Share Results"; }, 2000); }
+    if (btn) { btn.textContent = "Copied ✓"; setTimeout(() => { btn.textContent = "Share Results"; }, 2000); }
   }
 }
-
 function showModal(correct, overall) {
   const today = new Date().toISOString().split('T')[0];
   if (localStorage.getItem('ykb_submitted') === today) return;
@@ -682,10 +753,10 @@ function showRules() {
             </div>
           </div>
           <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0">
-            <div style="font-size:20px;min-width:28px;text-align:center">\u2705</div>
+            <div style="font-size:20px;min-width:28px;text-align:center">ℹ️</div>
             <div>
               <div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white);margin-bottom:3px">Tiers</div>
-              <div style="font-size:12px;color:var(--ash);line-height:1.5">\u2705 Ball Knower · \uD83D\uDFE6 Scholar (hint used) · \uD83D\uDFE5 Wrong · \uD83D\uDFEA Burned</div>
+              <div style="font-size:12px;color:var(--ash);line-height:1.5">🟩 Ball Knower · \uD83D\uDFE6 Scholar (hint used) · \uD83D\uDFE5 Wrong · \uD83D\uDFEA Burned</div>
             </div>
           </div>
         </div>
