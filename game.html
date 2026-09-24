@@ -435,10 +435,21 @@ function renderPips() {
   }).join("");
 }
 
+// Aggie rule: Texas A&M always ranks above Texas (and other peers) in suggestions.
+const BOOSTED_SCHOOLS = ["texas a&m"];
 function updateSuggestions(val) {
   if (val.length < 2) { state.suggestions = []; render(); return; }
   const q = val.toLowerCase();
-  state.suggestions = COLLEGES.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  const isBoosted = s => BOOSTED_SCHOOLS.includes(s.toLowerCase());
+  state.suggestions = COLLEGES.filter(c => c.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const aPre = a.toLowerCase().startsWith(q), bPre = b.toLowerCase().startsWith(q);
+      if (aPre !== bPre) return aPre ? -1 : 1; // prefix matches first
+      const aB = isBoosted(a), bB = isBoosted(b);
+      if (aB !== bB) return aB ? -1 : 1;       // boosted schools next
+      return a.localeCompare(b);
+    })
+    .slice(0, 6);
   render();
 }
 
