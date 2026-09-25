@@ -103,6 +103,14 @@
     .game-title{font-family:var(--font-d);font-size:24px;letter-spacing:1px;color:var(--white);line-height:1}
     .game-hook{font-size:13px;color:var(--ash);margin-top:5px;line-height:1.45}
     .game-play{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--red);white-space:nowrap}
+    .upnext{margin:26px 0 6px}
+    .upnext-kicker{text-align:center;font-family:var(--font-d);font-size:12px;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+    .upnext-card{display:flex;align-items:center;gap:12px;background:var(--dark);border:1px solid var(--slate);border-radius:14px;padding:12px 16px;margin-bottom:8px;text-decoration:none;transition:border-color .2s,transform .2s}
+    .upnext-card:hover{border-color:var(--red);transform:translateY(-2px)}
+    .upnext-meta{flex:1}
+    .upnext-title{font-family:var(--font-d);font-size:17px;letter-spacing:1px;color:var(--white);line-height:1}
+    .upnext-hook{font-size:12px;color:var(--ash);margin-top:3px;line-height:1.45}
+    .upnext-play{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--red);white-space:nowrap}
     .how-row{display:flex;gap:14px;align-items:baseline;padding:9px 0}
     .how-num{font-family:var(--font-d);font-size:22px;color:#3a3a3a;min-width:28px}
     .how-text{font-size:14px;color:var(--white);line-height:1.5}
@@ -438,6 +446,30 @@ function render() {
             </div>`).join("")}
         </div>
         <button class="btn-share" id="shareBtn">Share Results</button>
+        <div class="upnext">
+          <div class="upnext-kicker">Up next</div>
+          <a class="upnext-card" href="/nts.html">
+            <div class="upnext-meta">
+              <div class="upnext-title">Name That Squad</div>
+              <div class="upnext-hook">Which NFL offense is this? The colleges tell all.</div>
+            </div>
+            <div class="upnext-play">PLAY &gt;</div>
+          </a>
+          <a class="upnext-card" href="/pitstops.html">
+            <div class="upnext-meta">
+              <div class="upnext-title">Career Pit Stops</div>
+              <div class="upnext-hook">Follow the trail. Name the player.</div>
+            </div>
+            <div class="upnext-play">PLAY &gt;</div>
+          </a>
+          <a class="upnext-card" href="/streaker.html">
+            <div class="upnext-meta">
+              <div class="upnext-title">Streaker</div>
+              <div class="upnext-hook">Name colleges back-to-back. Don't break the chain.</div>
+            </div>
+            <div class="upnext-play">PLAY &gt;</div>
+          </a>
+        </div>
         <div class="midnight-note">New players every day at midnight</div>
       </div>`;
     document.getElementById("shareBtn").addEventListener("click", handleShare);

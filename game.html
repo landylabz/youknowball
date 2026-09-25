@@ -83,6 +83,14 @@
     .result-tier-badge{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:right}
     .btn-share{width:100%;background:var(--red);border:none;border-radius:12px;padding:18px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;text-transform:uppercase;color:var(--white);cursor:pointer;transition:all .15s}
     .btn-share:hover{background:#e01000;transform:translateY(-1px)}
+    .upnext{margin:26px 0 6px}
+    .upnext-kicker{text-align:center;font-family:var(--font-d);font-size:12px;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+    .upnext-card{display:flex;align-items:center;gap:12px;background:var(--dark);border:1px solid var(--slate);border-radius:14px;padding:12px 16px;margin-bottom:8px;text-decoration:none;transition:border-color .2s,transform .2s}
+    .upnext-card:hover{border-color:var(--red);transform:translateY(-2px)}
+    .upnext-meta{flex:1}
+    .upnext-title{font-family:var(--font-d);font-size:17px;letter-spacing:1px;color:var(--white);line-height:1}
+    .upnext-hook{font-size:12px;color:var(--ash);margin-top:3px;line-height:1.45}
+    .upnext-play{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--red);white-space:nowrap}
     .btn-leaderboard{width:100%;background:transparent;border:1.5px solid var(--slate);border-radius:12px;padding:15px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--ash);cursor:pointer;transition:all .2s;text-decoration:none;display:block;text-align:center}
     .btn-leaderboard:hover{border-color:var(--white);color:var(--white)}
     .midnight-note{text-align:center;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#333;padding-bottom:20px}
@@ -339,6 +347,30 @@ function render() {
             </div>`).join("")}
         </div>
         <button class="btn-share" id="shareBtn">Share Results</button>
+        <div class="upnext">
+          <div class="upnext-kicker">Up next</div>
+          <a class="upnext-card" href="/nts.html">
+            <div class="upnext-meta">
+              <div class="upnext-title">Name That Squad</div>
+              <div class="upnext-hook">Which NFL offense is this? The colleges tell all.</div>
+            </div>
+            <div class="upnext-play">PLAY &gt;</div>
+          </a>
+          <a class="upnext-card" href="/pitstops.html">
+            <div class="upnext-meta">
+              <div class="upnext-title">Career Pit Stops</div>
+              <div class="upnext-hook">Follow the trail. Name the player.</div>
+            </div>
+            <div class="upnext-play">PLAY &gt;</div>
+          </a>
+          <a class="upnext-card" href="/streaker.html">
+            <div class="upnext-meta">
+              <div class="upnext-title">Streaker</div>
+              <div class="upnext-hook">Name colleges back-to-back. Don't break the chain.</div>
+            </div>
+            <div class="upnext-play">PLAY &gt;</div>
+          </a>
+        </div>
         <div class="midnight-note">New players every day at midnight</div>
       </div>`;
     document.getElementById("shareBtn").addEventListener("click", handleShare);
