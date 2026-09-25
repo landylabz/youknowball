@@ -55,7 +55,7 @@
     .trail-meta{font-size:8px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:8px}
     .trail-open{display:flex;gap:10px;flex-wrap:wrap}
     .open-pill{background:rgba(255,18,0,.08);border:1px solid rgba(255,18,0,.2);border-radius:8px;padding:6px 14px;display:flex;flex-direction:column;gap:2px}
-    .open-pill-label{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,18,0,.7)}
+    .open-pill-label{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--red)}
     .open-pill-val{font-family:var(--font-h);font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
     .trail-stops{padding:14px 18px;display:flex;flex-direction:column}
     .stop-row{display:flex;align-items:center;gap:10px;padding:5px 0}
@@ -67,15 +67,14 @@
     .stop-connector{width:1px;height:10px;background:#252525;margin-left:28px}
 
     /* REVEAL BTN */
-    .btn-reveal{width:100%;background:transparent;border:1px dashed #2e2e2e;border-radius:10px;padding:12px 16px;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px}
+    .btn-reveal{width:100%;background:transparent;border:1px dashed #6f6f6f;border-radius:10px;padding:12px 16px;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--white);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px}
     .btn-reveal:hover:not(:disabled){border-color:var(--red);color:var(--red)}
     .btn-reveal:disabled{opacity:.2;cursor:not-allowed}
-    .reveal-cost{color:var(--red);font-size:13px}
-    .open-pill.locked .open-pill-val{color:#3a3a3a}
+    .open-pill.locked .open-pill-val{color:#9a9a9a}
     .misses{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-    .miss-label{font-size:9px;font-weight:700;letter-spacing:3px;color:var(--ash);text-transform:uppercase}
+    .miss-label{font-size:9px;font-weight:700;letter-spacing:3px;color:#d8d8d8;text-transform:uppercase}
     .miss-chip{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#ef4444;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
-    .strikes-line{text-align:center;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash)}
+    .strikes-line{text-align:center;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#d8d8d8}
     .suggestions{max-height:190px;overflow-y:auto}
 
     /* INPUT */
@@ -308,10 +307,10 @@ function renderGame() {
 
   let hintBtns;
   if (!S.posRevealed) {
-    hintBtns = `<button class="btn-reveal" id="btn-hint-pos"><span>Reveal position</span><span class="reveal-cost">→ 🗺️ max</span></button>`;
+    hintBtns = `<button class="btn-reveal" id="btn-hint-pos"><span>Reveal position</span></button>`;
   } else if (!S.jerRevealed) {
     hintBtns = jerseyKnown
-      ? `<button class="btn-reveal" id="btn-hint-jer"><span>Reveal jersey #</span><span class="reveal-cost">→ 🗺️ max</span></button>`
+      ? `<button class="btn-reveal" id="btn-hint-jer"><span>Reveal jersey #</span></button>`
       : `<button class="btn-reveal" disabled>Jersey # — no data yet</button>`;
   } else {
     hintBtns = `<button class="btn-reveal" disabled>All hints used</button>`;
