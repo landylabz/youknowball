@@ -196,16 +196,14 @@
     <div class="footer-wm">YOUKNOWBALL.</div>
     <div class="footer-links">
       <a href="/leaderboard.html#daily">Leaderboard</a>
-      <a href="/game.html">Daily Game</a>
+      <a href="/">Daily Game</a>
     </div>
     <div class="footer-note">New players daily at midnight</div>
   </footer>
 </div>
 <div id="modal-root"></div>
 <script>
-/* ── Daily game engine ──
-   Ported from game.html (the canonical daily game). Keep the two in sync:
-   same seeded selection, tiers, hints, guesses, streak, and logging. */
+/* ── Daily game engine ── */
 const { createClient } = supabase;
 const sb = createClient(
   'https://qoxgmscwbtdcvztksjtx.supabase.co',
