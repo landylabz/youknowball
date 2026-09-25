@@ -273,7 +273,7 @@ function renderRules() {
       <div>
         <div class="rules-eyebrow">YouKnowBall · Career Trail</div>
         <div class="rules-title" style="font-size:46px;line-height:1">PIT STOPS.</div>
-        <div class="rules-sub" style="margin-top:12px">5 players. Every career trail is on the board — name them.</div>
+        <div class="rules-sub" style="margin-top:12px;font-size:19px;color:#fff;font-weight:600;line-height:1.5">5 players. Every career trail is on the board — name them.</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;color:rgba(255,255,255,.75)">
         <div><span style="font-size:18px">📍</span>&nbsp;&nbsp;solve it cold</div>
@@ -325,7 +325,6 @@ function renderGame() {
     <div class="game-wrap">
       <div class="round-counter">
         <div><div class="round-label">Player</div><div class="round-num">${S.round + 1} / ${ROUNDS}</div></div>
-        <div style="text-align:right"><div class="round-label">Pin it</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.hints === 0 ? '#22c55e' : 'var(--white)'}">${S.hints === 0 ? '📍 on the table' : '🗺️ at best'}</div></div>
       </div>
 
       <div class="${cardCls}" id="tc">
