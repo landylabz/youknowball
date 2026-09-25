@@ -261,9 +261,20 @@
 
 <script>
 // ─── SUPABASE ─────────────────────────────────────────────────────────────
-const SUPA_URL  = 'https://xxxx.supabase.co';
-const SUPA_ANON = 'your-anon-key-here';
+const SUPA_URL  = 'https://qoxgmscwbtdcvztksjtx.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI';
 const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
+
+// Preview deployments (Vercel *.vercel.app) are for UI review only: never write to the DB from them.
+const YKB_IS_PREVIEW = /\.vercel\.app$/.test(location.hostname);
+if (YKB_IS_PREVIEW) {
+  const __ykbBadge = document.createElement('div');
+  __ykbBadge.textContent = 'PREVIEW BUILD · scores are not posted';
+  __ykbBadge.style.cssText = 'position:fixed;bottom:10px;right:10px;z-index:9999;background:#111;color:#fff;font:600 11px/1.4 system-ui,sans-serif;padding:8px 12px;border-radius:20px;letter-spacing:1px;opacity:.88;pointer-events:none';
+  const __ykbShow = () => { if (document.body) document.body.appendChild(__ykbBadge); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', __ykbShow);
+  else __ykbShow();
+}
 
 // ─── SCHOOL THEMES ────────────────────────────────────────────────────────
 const SCHOOLS = {
@@ -708,10 +719,12 @@ async function doPost(){
   document.getElementById('modal-initials').classList.remove('open');
   const best=scores.reduce((b,s)=>s.tier.pts>b.tier.pts?s:b,scores[0]);
   try{
-    const {data}=await sb.from('nts_leaderboard')
-      .insert([{initials,score:best.tier.pts,team_name:best.team,hints_used:best.hintsUsed}])
-      .select().single();
-    newEntryId=data?.id||null;
+    if (!YKB_IS_PREVIEW) {
+      const {data}=await sb.from('nts_leaderboard')
+        .insert([{initials,score:best.tier.pts,team_name:best.team,hints_used:best.hintsUsed}])
+        .select().single();
+      newEntryId=data?.id||null;
+    }
   }catch(e){}
   fetchLeaderboard('lb-results-list');
 }
