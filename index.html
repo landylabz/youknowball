@@ -31,9 +31,6 @@
     .pip{flex:1;height:4px;border-radius:2px;background:var(--slate);transition:background .4s}
     .pip.correct{background:#22c55e} .pip.wrong{background:#ef4444} .pip.current{background:rgba(255,18,0,.35)}
     .main{padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
-    .counter{display:flex;align-items:center;justify-content:space-between}
-    .counter-label{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
-    .counter-num{font-family:var(--font-d);font-size:18px;letter-spacing:2px;color:var(--red)}
     .player-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;padding:16px 18px 14px;position:relative;overflow:hidden;transition:border-color .25s,box-shadow .25s,padding .25s ease}
     .player-card.flash-correct{border-color:#22c55e;box-shadow:0 0 0 1px #22c55e,0 0 32px rgba(34,197,94,.12);animation:popCorrect .5s ease}
     .player-card.flash-wrong{border-color:var(--red);box-shadow:0 0 0 1px var(--red);animation:shake .35s ease}
@@ -267,11 +264,6 @@ function getDayNum() {
   return Math.floor((new Date() - new Date("2026-03-02")) / 86400000) + 1;
 }
 
-function ordinal(n) {
-  const s=["th","st","nd","rd"],v=n%100;
-  return n+(s[(v-20)%10]||s[v]||s[0]);
-}
-
 const PLAYERS_PER_DAY = 10;
 const dayNum = getDayNum();
 const daySeed = getDaySeed();
@@ -445,11 +437,6 @@ function render() {
   root.innerHTML = `
     <div class="progress">${renderPips()}</div>
     <div class="main">
-      <div class="counter">
-        <div class="counter-label">Player</div>
-        <div class="counter-num">${ordinal(idx + 1)}</div>
-        <div class="counter-label">of ${PLAYERS_PER_DAY}</div>
-      </div>
       <div class="${cardClass}" id="playerCard">
         <div class="card-ghost-num">${player.jersey_number || ''}</div>
         <div class="player-number">#${player.jersey_number || '—'}</div>
