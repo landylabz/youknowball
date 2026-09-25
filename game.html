@@ -612,25 +612,38 @@ function showModal(correct, overall) {
         </div>
         <div class="modal-field">
           <div class="modal-field-label">Your State</div>
-          <select class="modal-select" id="modalState">
-            <option value="">Select a state...</option>
-            ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
-          </select>
+          <div style="position:relative">
+            <input class="modal-select" id="modalState" placeholder="Start typing your state..." autocomplete="off"/>
+            <div class="suggestions" id="modalStateSugs" style="display:none"></div>
+          </div>
         </div>
         <button class="btn-modal-submit" id="modalSubmit" disabled>Submit Score</button>
         <button class="btn-modal-skip" id="modalSkip">Skip — maybe next time</button>
       </div>
-      <button class="btn-claudio" id="claudioBtn">Claudio's Mercy Button</button>
     </div>`;
   const inp = document.getElementById('modalInitials');
-  const sel = document.getElementById('modalState');
+  const stateInp = document.getElementById('modalState');
+  const stateSugs = document.getElementById('modalStateSugs');
   const btn = document.getElementById('modalSubmit');
-  function checkReady() { btn.disabled = inp.value.trim().length < 2 || !sel.value; }
+  const canonicalState = () => US_STATES.find(s => s.toLowerCase() === stateInp.value.trim().toLowerCase());
+  function checkReady() { btn.disabled = inp.value.trim().length < 2 || !canonicalState(); }
+  function renderStateSugs() {
+    const q = stateInp.value.trim().toLowerCase();
+    const matches = (q && !canonicalState()) ? US_STATES.filter(s => s.toLowerCase().includes(q)).slice(0, 6) : [];
+    if (!matches.length) { stateSugs.style.display = 'none'; stateSugs.innerHTML = ''; return; }
+    stateSugs.innerHTML = matches.map(s => `<div class="suggestion" data-s="${s}">${s}</div>`).join('');
+    stateSugs.style.display = '';
+    stateSugs.querySelectorAll('.suggestion').forEach(el => {
+      el.addEventListener('click', () => { stateInp.value = el.dataset.s; stateSugs.style.display = 'none'; checkReady(); });
+    });
+  }
   inp.addEventListener('input', checkReady);
-  sel.addEventListener('change', checkReady);
+  stateInp.addEventListener('input', () => { renderStateSugs(); checkReady(); });
+  stateInp.addEventListener('focus', renderStateSugs);
+  stateInp.addEventListener('blur', () => setTimeout(() => { stateSugs.style.display = 'none'; }, 150));
   btn.addEventListener('click', async () => {
     const initials = inp.value.trim().toUpperCase();
-    const userState = sel.value;
+    const userState = canonicalState();
     btn.disabled = true; btn.textContent = 'Posting...';
     await submitScore(initials, userState, correct, overall);
   });
@@ -708,7 +721,6 @@ function showRules() {
         </div>
         <button onclick="document.getElementById('modal-root').innerHTML=''" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer">Got It</button>
       </div>
-      <button class="btn-claudio" id="claudioBtn">Claudio's Mercy Button</button>
     </div>`;
   document.getElementById('rulesOverlay')?.addEventListener('click', e => {
     if (e.target.id === 'rulesOverlay') modalRoot.innerHTML = '';
