@@ -9,7 +9,7 @@
   <style>
     :root{
       --red:#FF1200;--black:#0A0A0A;--field:#1A1A1A;--slate:#2E2E2E;
-      --ash:#555;--white:#F5F5F5;--dim:#888;--card:#111;--bdr:#2a2a2a;
+      --ash:#555;--white:#F5F5F5;--dim:#888;--card:#111;--bdr:#2a2a2a;--dark:#1A1A1A;--font-d:'Bebas Neue',sans-serif;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{min-height:100vh;background:var(--black)}
@@ -165,7 +165,15 @@
     .btn-post{margin-top:14px;width:100%;padding:13px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;background:var(--red);color:var(--white);border:none;border-radius:10px;cursor:pointer;transition:background .2s ease}
     .btn-post:disabled{background:var(--slate);cursor:not-allowed}
     .btn-skip{margin-top:8px;width:100%;padding:10px;background:transparent;border:none;color:var(--ash);font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif}
-  </style>
+      .upnext{margin:26px 0 6px}
+    .upnext-kicker{text-align:center;font-family:var(--font-d);font-size:12px;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:10px}
+    .upnext-card{display:flex;align-items:center;gap:12px;background:var(--dark);border:1px solid var(--slate);border-radius:14px;padding:12px 16px;margin-bottom:8px;text-decoration:none;transition:border-color .2s,transform .2s}
+    .upnext-card:hover{border-color:var(--red);transform:translateY(-2px)}
+    .upnext-meta{flex:1}
+    .upnext-title{font-family:var(--font-d);font-size:17px;letter-spacing:1px;color:var(--white);line-height:1}
+    .upnext-hook{font-size:12px;color:var(--ash);margin-top:3px;line-height:1.45}
+    .upnext-play{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--red);white-space:nowrap}
+</style>
 </head>
 <body>
 <div id="app">
@@ -241,6 +249,30 @@
       <div class="lb-preview" style="margin-top:4px">
         <div class="lb-preview-title">🏆 BEST SINGLE ROUND</div>
         <div id="lb-results-list"><div class="lb-empty">Loading...</div></div>
+      </div>
+      <div class="upnext">
+        <div class="upnext-kicker">Up next</div>
+        <a class="upnext-card" href="/game.html">
+          <div class="upnext-meta">
+            <div class="upnext-title">Daily Game</div>
+            <div class="upnext-hook">10 players. Name the college. Once a day.</div>
+          </div>
+          <div class="upnext-play">PLAY &gt;</div>
+        </a>
+        <a class="upnext-card" href="/streaker.html">
+          <div class="upnext-meta">
+            <div class="upnext-title">Streaker</div>
+            <div class="upnext-hook">Name colleges back-to-back. Don't break the chain.</div>
+          </div>
+          <div class="upnext-play">PLAY &gt;</div>
+        </a>
+        <a class="upnext-card" href="/pitstops.html">
+          <div class="upnext-meta">
+            <div class="upnext-title">Career Pit Stops</div>
+            <div class="upnext-hook">Follow the trail. Name the player.</div>
+          </div>
+          <div class="upnext-play">PLAY &gt;</div>
+        </a>
       </div>
       <div style="font-size:10px;color:var(--ash);letter-spacing:2px;margin-top:8px">YOUKNOWBALL.IO</div>
     </div>
