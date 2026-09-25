@@ -76,8 +76,6 @@
     .miss-label{font-size:9px;font-weight:700;letter-spacing:3px;color:var(--ash);text-transform:uppercase}
     .miss-chip{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#ef4444;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
     .strikes-line{text-align:center;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash)}
-    .res-score{font-family:var(--font-d);font-size:64px;letter-spacing:2px;color:var(--white);position:relative;line-height:1}
-    .res-max{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.4);position:relative}
     .suggestions{max-height:190px;overflow-y:auto}
 
     /* INPUT */
@@ -153,7 +151,7 @@
     <a href="/" class="wordmark">YOUKNOWBALL.</a>
     <div class="header-right">
       <div class="header-mode">PIT STOPS</div>
-      <div class="header-sub">Career Trail · <span id="hdrScore">0 PTS</span></div>
+      <div class="header-sub">Career Trail</div>
     </div>
   </header>
   <div class="progress" id="pips"></div>
@@ -168,20 +166,14 @@ const sb = createClient(
 );
 
 const ROUNDS = 5;
-const HIT_EMOJI  = '📍';
-const MISS_EMOJI = '❌';
 
-// Scoring: 1000 pts per round. Each hint −250, each wrong guess −100.
-// Tier is pure flair: 0 hints = FIRST CLASS, 1 = BUSINESS, 2 = ECONOMY.
-const PTS_BASE = 1000, PTS_HINT = 250, PTS_MISS = 100, MAX_MISSES = 3;
-const TIER_LABELS = ['FIRST CLASS', 'BUSINESS', 'ECONOMY'];
+// Report card: 📍 solved cold (no hints), 🗺️ needed a hint, 🗑️ struck out.
+const MAX_MISSES = 3;
+const GRADE_EMOJI = { pin: '📍', map: '🗺️', miss: '🗑️' };
 
-function getTierLabel(hints) {
-  return TIER_LABELS[Math.min(hints, TIER_LABELS.length - 1)];
-}
-
-function roundPoints() {
-  return Math.max(0, PTS_BASE - PTS_HINT * S.hints - PTS_MISS * S.misses.length);
+function gradeFor(r) {
+  if (!r.correct) return 'miss';
+  return r.hints === 0 ? 'pin' : 'map';
 }
 
 function getDaySeed() {
@@ -200,7 +192,7 @@ function seededShuffle(arr, seed) {
 }
 
 let players = [], allNames = [];
-let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'loading' };
+let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'loading' };
 
 async function init() {
   render();
@@ -267,8 +259,6 @@ function renderPips() {
 
 function render() {
   renderPips();
-  const hs = document.getElementById('hdrScore');
-  if (hs) hs.textContent = S.score.toLocaleString() + ' PTS';
   const el = document.getElementById('screen');
   if (S.phase === 'loading')  { el.innerHTML = `<div class="loading-screen"><div class="loading-text">LOADING...</div><div class="loading-sub">Building career trails</div></div>`; return; }
   if (S.phase === 'rules')    { renderRules(); return; }
@@ -292,15 +282,15 @@ function renderRules() {
         </div>
         <div class="rule-row">
           <div class="rule-icon">🔍</div>
-          <div><div class="rule-title">Two Hints</div><div class="rule-text">Reveal position, then jersey number. Each hint costs you 250 pts.</div></div>
+          <div><div class="rule-title">Two Hints</div><div class="rule-text">Reveal position, then jersey number. But hints cost you the pin — solve it cold for 📍.</div></div>
         </div>
         <div class="rule-row">
           <div class="rule-icon">✖️</div>
           <div><div class="rule-title">Three Strikes</div><div class="rule-text">Three wrong guesses ends the round as a miss. Your misses stay on the board.</div></div>
         </div>
         <div class="rule-row">
-          <div class="rule-icon">🏆</div>
-          <div><div class="rule-title">Scoring</div><div class="rule-text">1,000 pts per round. Hints −250, wrong guesses −100. Max 5,000.</div></div>
+          <div class="rule-icon">📍</div>
+          <div><div class="rule-title">Report Card</div><div class="rule-text">📍 solved it cold · 🗺️ needed a hint · 🗑️ struck out.</div></div>
         </div>
       </div>
       <button class="btn-play" id="btn-start">LET'S ROLL</button>
@@ -320,8 +310,6 @@ function renderGame() {
     if (i < stops.length - 1) stopsHtml += `<div class="stop-connector"></div>`;
   });
 
-  const tierNow = getTierLabel(S.hints);
-  const ptsNow = roundPoints();
   const jerseyKnown = p.jersey_number != null;
 
   const posPill = S.posRevealed
@@ -333,10 +321,10 @@ function renderGame() {
 
   let hintBtns;
   if (!S.posRevealed) {
-    hintBtns = `<button class="btn-reveal" id="btn-hint-pos"><span>Reveal position</span><span class="reveal-cost">→ −250 pts</span></button>`;
+    hintBtns = `<button class="btn-reveal" id="btn-hint-pos"><span>Reveal position</span><span class="reveal-cost">→ 🗺️ max</span></button>`;
   } else if (!S.jerRevealed) {
     hintBtns = jerseyKnown
-      ? `<button class="btn-reveal" id="btn-hint-jer"><span>Reveal jersey #</span><span class="reveal-cost">→ −250 pts</span></button>`
+      ? `<button class="btn-reveal" id="btn-hint-jer"><span>Reveal jersey #</span><span class="reveal-cost">→ 🗺️ max</span></button>`
       : `<button class="btn-reveal" disabled>Jersey # — no data yet</button>`;
   } else {
     hintBtns = `<button class="btn-reveal" disabled>All hints used</button>`;
@@ -350,7 +338,7 @@ function renderGame() {
     <div class="game-wrap">
       <div class="round-counter">
         <div><div class="round-label">Player</div><div class="round-num">${S.round + 1} / ${ROUNDS}</div></div>
-        <div style="text-align:right"><div class="round-label">Guess Now</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.hints === 0 ? '#22c55e' : 'var(--white)'}">${tierNow}</div><div class="round-label" style="margin-top:2px">${ptsNow.toLocaleString()} pts on the table</div></div>
+        <div style="text-align:right"><div class="round-label">Pin it</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.hints === 0 ? '#22c55e' : 'var(--white)'}">${S.hints === 0 ? '📍 on the table' : '🗺️ at best'}</div></div>
       </div>
 
       <div class="${cardCls}" id="tc">
@@ -404,17 +392,18 @@ function renderBetween() {
     if (i < stops.length - 1) trailHtml += `<div class="trail-connector-sm"></div>`;
   });
 
-  const isHit = last.correct;
-  const tierLabel = isHit ? getTierLabel(last.hints) : 'STRUCK OUT';
+  const grade = last.grade;
+  const gradeEmoji = GRADE_EMOJI[grade];
+  const gradeLabel = grade === 'pin' ? 'PINNED IT' : grade === 'map' ? 'NEEDED A HINT' : 'STRUCK OUT';
+  const gradeColor = grade === 'pin' ? '#22c55e' : grade === 'map' ? '#eab308' : '#ef4444';
 
   document.getElementById('screen').innerHTML = `
     <div class="between">
       <div class="between-card">
-        <div class="between-pin">${isHit ? HIT_EMOJI : MISS_EMOJI}</div>
-        <div class="between-label" style="color:${isHit ? '#22c55e' : '#ef4444'}">${tierLabel}</div>
+        <div class="between-pin">${gradeEmoji}</div>
+        <div class="between-label" style="color:${gradeColor}">${gradeLabel}</div>
         <div class="between-player">${p.player_name}</div>
         <div class="between-detail">${p.college} · ${p.position}</div>
-        <div class="between-detail" style="color:${isHit ? '#22c55e' : '#444'}">+${last.points.toLocaleString()} PTS</div>
       </div>
       <div class="full-trail">
         <div style="font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-bottom:8px">FULL CAREER TRAIL</div>
@@ -425,28 +414,25 @@ function renderBetween() {
 }
 
 function renderResults() {
-  const hits = S.results.filter(r => r.correct).length;
-  const emojiRow = S.results.map(r => r.correct ? HIT_EMOJI : MISS_EMOJI).join('');
+  const emojiRow = S.results.map(r => GRADE_EMOJI[r.grade]).join('');
+  const pins = S.results.filter(r => r.grade === 'pin').length;
 
-  // Tagline based on hit count
+  // Tagline based on pin count
   const taglines = {
-    5: "You know where everyone's been. Uncanny.",
-    4: "Locked in. Real film room energy.",
-    3: "Solid. You've been watching.",
-    2: "A few blind spots. That's okay.",
-    1: "One stop was enough. Barely.",
-    0: "Everyone needed a map. Respect the honesty."
+    5: "Five pins. You don't need the map.",
+    4: "Nearly flawless. The trail holds no secrets.",
+    3: "Sharp. A few detours, but you arrived.",
+    2: "You got there. The map helped.",
+    1: "One clean pin. We'll take it.",
+    0: "The trail won today. Run it back."
   };
-  const tagline = taglines[hits] || "You showed up.";
-  const total = S.results.reduce((a, r) => a + r.points, 0);
-  const shareText = `PIT STOPS · ${total.toLocaleString()}/5,000\n${emojiRow}\nyouknowball.io`;
+  const tagline = taglines[pins];
+  const shareText = `PIT STOPS\n${emojiRow}\nyouknowball.io`;
 
   document.getElementById('screen').innerHTML = `
     <div class="results">
       <div class="results-hero">
         <div class="res-label">PIT STOPS · YouKnowBall.io</div>
-        <div class="res-score">${total.toLocaleString()}</div>
-        <div class="res-max">/ 5,000 PTS</div>
         <div class="res-pins">${emojiRow}</div>
         <div class="res-tagline">"${tagline}"</div>
       </div>
@@ -454,18 +440,18 @@ function renderResults() {
       <div class="result-list">
         ${S.results.map(r => `
           <div class="result-row">
-            <div class="res-emj">${r.correct ? HIT_EMOJI : MISS_EMOJI}</div>
+            <div class="res-emj">${GRADE_EMOJI[r.grade]}</div>
             <div class="res-info">
               <div class="res-name">${r.player.player_name}</div>
               <div class="res-detail">${r.player.college} · ${r.player.position}</div>
             </div>
-            <div class="res-stops" style="color:${r.correct ? '#22c55e' : '#444'}">${r.correct ? '+' + r.points.toLocaleString() : 'MISS'}</div>
+            <div class="res-stops" style="color:${r.grade === 'pin' ? '#22c55e' : r.grade === 'map' ? '#eab308' : '#444'}">${r.grade === 'pin' ? 'CLEAN' : r.grade === 'map' ? (r.hints + ' HINT' + (r.hints > 1 ? 'S' : '')) : 'MISS'}</div>
           </div>`).join('')}
       </div>
 
       <div class="share-box">
         <div class="share-preview">
-          <strong>PIT STOPS · ${total.toLocaleString()}/5,000</strong><br>${emojiRow}
+          <strong>PIT STOPS</strong><br>${emojiRow}
         </div>
         <button class="btn-share" id="bsh">SHARE RESULTS</button>
       </div>
@@ -511,7 +497,7 @@ function renderResults() {
   });
 
   document.getElementById('bag').addEventListener('click', () => {
-    S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'rules' };
+    S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'rules' };
     render();
   });
 }
@@ -551,13 +537,13 @@ function submit(override) {
   S.suggs = [];
 
   if (correct) {
-    const pts = roundPoints();
-    S.score += pts;
     S.flash = 'correct';
     render();
     setTimeout(() => {
       S.flash = null;
-      S.results.push({ player: p, correct: true, hints: S.hints, misses: S.misses.length, points: pts });
+      const r = { player: p, correct: true, hints: S.hints, misses: S.misses.length };
+      r.grade = gradeFor(r);
+      S.results.push(r);
       advance();
     }, 500);
   } else {
@@ -568,8 +554,9 @@ function submit(override) {
     setTimeout(() => {
       S.flash = null;
       if (S.misses.length >= MAX_MISSES) {
-        // Struck out — round is a miss, no points
-        S.results.push({ player: p, correct: false, hints: S.hints, misses: S.misses.length, points: 0 });
+        // Struck out
+        const r = { player: p, correct: false, hints: S.hints, misses: S.misses.length, grade: 'miss' };
+        S.results.push(r);
         advance();
       } else {
         render();
