@@ -22,25 +22,25 @@
     .progress{background:var(--dark);padding:10px 20px;display:flex;gap:5px;border-bottom:1px solid var(--slate)}
     .pip{flex:1;height:4px;border-radius:2px;background:var(--slate);transition:background .4s}
     .pip.correct{background:#22c55e} .pip.wrong{background:#ef4444} .pip.current{background:rgba(255,18,0,.35)}
-    .main{padding:24px 20px;display:flex;flex-direction:column;gap:18px;flex:1}
+    .main{padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
     .counter{display:flex;align-items:center;justify-content:space-between}
     .counter-label{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
     .counter-num{font-family:var(--font-d);font-size:18px;letter-spacing:2px;color:var(--red)}
-    .player-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;padding:22px 22px 20px;position:relative;overflow:hidden;transition:border-color .25s,box-shadow .25s}
+    .player-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;padding:16px 18px 14px;position:sticky;top:64px;z-index:40;overflow:hidden;transition:border-color .25s,box-shadow .25s}
     .player-card.flash-correct{border-color:#22c55e;box-shadow:0 0 0 1px #22c55e,0 0 32px rgba(34,197,94,.12);animation:popCorrect .5s ease}
     .player-card.flash-wrong{border-color:var(--red);box-shadow:0 0 0 1px var(--red);animation:shake .35s ease}
     @keyframes popCorrect{0%,100%{transform:scale(1)}40%{transform:scale(1.015)}}
     @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
-    .card-ghost-num{position:absolute;top:-16px;right:-6px;font-family:var(--font-d);font-size:130px;color:rgba(255,18,0,.05);line-height:1;pointer-events:none;user-select:none}
-    .player-number{font-family:var(--font-d);font-size:68px;color:var(--red);line-height:1}
-    .player-name{font-family:var(--font-h);font-size:28px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px;line-height:1.1;margin-top:2px}
-    .player-pos{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-top:8px}
+    .card-ghost-num{position:absolute;top:-10px;right:-6px;font-family:var(--font-d);font-size:96px;color:rgba(255,18,0,.05);line-height:1;pointer-events:none;user-select:none}
+    .player-number{font-family:var(--font-d);font-size:52px;color:var(--red);line-height:1}
+    .player-name{font-family:var(--font-h);font-size:24px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px;line-height:1.1;margin-top:2px}
+    .player-pos{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-top:6px}
     .hints{display:flex;flex-direction:column;gap:7px}
     .hint-item{background:var(--dark);border:1px solid var(--slate);border-radius:10px;padding:11px 16px;display:flex;align-items:center;gap:12px;animation:hintIn .3s cubic-bezier(.16,1,.3,1) both}
     @keyframes hintIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
     .hint-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--red);min-width:80px}
     .hint-val{font-family:var(--font-h);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
-    .hint-btn{width:100%;background:transparent;border:1px dashed #333;border-radius:10px;padding:12px 16px;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+    .hint-btn{width:100%;background:transparent;border:1px dashed #333;border-radius:10px;padding:10px 16px;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
     .hint-btn:hover{border-color:var(--red);color:var(--red)}
     .input-wrap{position:relative}
     .guess-input{width:100%;background:var(--dark);border:1.5px solid var(--slate);border-radius:12px;padding:15px 18px;font-family:var(--font-h);font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--white);outline:none;transition:border-color .2s;-webkit-appearance:none;caret-color:var(--red)}
@@ -51,9 +51,9 @@
     .suggestion:last-child{border-bottom:none}
     .suggestion:hover{background:rgba(255,18,0,.1);color:var(--red)}
     .actions{display:flex;gap:10px}
-    .btn-submit{flex:1;background:var(--red);border:none;border-radius:12px;padding:17px;font-family:var(--font-d);font-size:22px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
+    .btn-submit{flex:1;background:var(--red);border:none;border-radius:12px;padding:14px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
     .btn-submit:hover{background:#CC0E00;transform:translateY(-1px)}
-    .btn-claudio{width:100%;background:transparent;border:1.5px solid #333;border-radius:12px;padding:11px;font-family:var(--font-d);font-size:14px;letter-spacing:3px;color:#555;cursor:pointer;transition:all .2s;margin-top:4px}
+    .btn-claudio{width:100%;background:transparent;border:1.5px solid #333;border-radius:12px;padding:9px;font-family:var(--font-d);font-size:12px;letter-spacing:3px;color:#555;cursor:pointer;transition:all .2s;margin-top:4px}
     .btn-claudio:hover{border-color:#FF1200;color:#FF1200}
     .between{display:flex;flex-direction:column;align-items:center;padding:40px 20px;gap:20px;animation:fadeUp .4s ease both;flex:1}
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
