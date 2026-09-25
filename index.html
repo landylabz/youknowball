@@ -35,7 +35,7 @@
     .counter{display:flex;align-items:center;justify-content:space-between}
     .counter-label{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash)}
     .counter-num{font-family:var(--font-d);font-size:18px;letter-spacing:2px;color:var(--red)}
-    .player-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;padding:16px 18px 14px;position:sticky;top:64px;z-index:40;overflow:hidden;transition:border-color .25s,box-shadow .25s}
+    .player-card{background:var(--dark);border:1px solid var(--slate);border-radius:16px;padding:16px 18px 14px;position:relative;overflow:hidden;transition:border-color .25s,box-shadow .25s,padding .25s ease}
     .player-card.flash-correct{border-color:#22c55e;box-shadow:0 0 0 1px #22c55e,0 0 32px rgba(34,197,94,.12);animation:popCorrect .5s ease}
     .player-card.flash-wrong{border-color:var(--red);box-shadow:0 0 0 1px var(--red);animation:shake .35s ease}
     @keyframes popCorrect{0%,100%{transform:scale(1)}40%{transform:scale(1.015)}}
@@ -44,6 +44,12 @@
     .player-number{font-family:var(--font-d);font-size:52px;color:var(--red);line-height:1}
     .player-name{font-family:var(--font-h);font-size:24px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px;line-height:1.1;margin-top:2px}
     .player-pos{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-top:6px}
+    /* keyboard open: collapse the player card to a slim banner so it can never cover the input */
+    #game-root.kb-open .player-card{padding:10px 16px}
+    #game-root.kb-open .card-ghost-num{display:none}
+    #game-root.kb-open .player-number{font-size:20px;display:inline-block;vertical-align:middle}
+    #game-root.kb-open .player-name{font-size:15px;display:inline-block;vertical-align:middle;margin:0 0 0 10px}
+    #game-root.kb-open .player-pos{display:none}
     .hints{display:flex;flex-direction:column;gap:7px}
     .hint-item{background:var(--dark);border:1px solid var(--slate);border-radius:10px;padding:11px 16px;display:flex;align-items:center;gap:12px;animation:hintIn .3s cubic-bezier(.16,1,.3,1) both}
     @keyframes hintIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -876,6 +882,22 @@ function updateSuggestions(val) {
     .slice(0, 6);
   render();
 }
+
+// Collapse the player card to a slim banner while the keyboard is open:
+// the answer target stays visible without ever covering the input.
+(function(){
+  const rootOf = () => document.getElementById("game-root");
+  const setKb = open => { const r = rootOf(); if (r) r.classList.toggle("kb-open", open); };
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const sync = () => setKb(vv.height < window.innerHeight * 0.82);
+    vv.addEventListener("resize", sync);
+    sync();
+  } else {
+    document.addEventListener("focusin", e => { if (e.target && e.target.id === "guessInput") setKb(true); });
+    document.addEventListener("focusout", () => setKb(false));
+  }
+})();
 
 init();
 </script>
