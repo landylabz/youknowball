@@ -197,6 +197,7 @@
 <div class="lb-tabs">
   
   <button class="lb-tab active" onclick="setGameType('streaker')">Streaker</button>
+  <button class="lb-tab" onclick="setGameType('daily')">Daily</button>
 </div>
 
 <div class="lb-tabs" style="border-top:none;padding-top:0" id="timeTabs">
@@ -395,7 +396,7 @@
   }
 
   document.getElementById('prevBtn').disabled = currentDay <= 1;
-  setGameType('streaker');
+  setGameType(location.hash === '#daily' ? 'daily' : 'streaker');
 </script>
 </body>
 </html>
