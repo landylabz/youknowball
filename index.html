@@ -213,6 +213,17 @@ const sb = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
 );
 
+// Preview deployments (Vercel *.vercel.app) are for UI review only: never write to the DB from them.
+const YKB_IS_PREVIEW = /\.vercel\.app$/.test(location.hostname);
+if (YKB_IS_PREVIEW) {
+  const __ykbBadge = document.createElement('div');
+  __ykbBadge.textContent = 'PREVIEW BUILD · scores are not posted';
+  __ykbBadge.style.cssText = 'position:fixed;bottom:10px;right:10px;z-index:9999;background:#111;color:#fff;font:600 11px/1.4 system-ui,sans-serif;padding:8px 12px;border-radius:20px;letter-spacing:1px;opacity:.88;pointer-events:none';
+  const __ykbShow = () => { if (document.body) document.body.appendChild(__ykbBadge); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', __ykbShow);
+  else __ykbShow();
+}
+
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
 let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
@@ -318,7 +329,7 @@ async function init() {
       }
     }
     dayPlayers = pool.slice(0, 10);
-    await sb.from('daily_game_log').upsert({ day_number: dayNum, game_date: new Date().toISOString().split('T')[0], player_names: dayPlayers.map(p => p.name) }, { onConflict: 'day_number' });
+    if (!YKB_IS_PREVIEW) await sb.from('daily_game_log').upsert({ day_number: dayNum, game_date: new Date().toISOString().split('T')[0], player_names: dayPlayers.map(p => p.name) }, { onConflict: 'day_number' });
   } catch(err) {
     console.error('Failed to load players:', err);
     dayPlayers = [];
@@ -517,7 +528,7 @@ function submitGuess(override) {
     setTimeout(() => {
       state.flash = null;
       state.results.push({ player, correct: true, hintsUsed: state.hints, tier });
-      sb.from('player_results').insert({ day_number: dayNum, player_name: player.name, correct: true, hints_used: state.hints }).then(() => {});
+      if (!YKB_IS_PREVIEW) sb.from('player_results').insert({ day_number: dayNum, player_name: player.name, correct: true, hints_used: state.hints }).then(() => {});
       if (state.idx + 1 >= PLAYERS_PER_DAY) { finishGame(); }
       else {
         state.phase = "between"; render();
@@ -534,7 +545,7 @@ function submitGuess(override) {
         state.results.push({ player, correct: false, hintsUsed: state.hints, tier });
         state.suggestions = [];
         state.wrongGuesses = 0;
-        sb.from('player_results').insert({ day_number: dayNum, player_name: player.name, correct: false, hints_used: state.hints }).then(() => {});
+        if (!YKB_IS_PREVIEW) sb.from('player_results').insert({ day_number: dayNum, player_name: player.name, correct: false, hints_used: state.hints }).then(() => {});
         if (state.idx + 1 >= PLAYERS_PER_DAY) { finishGame(); }
         else {
           state.phase = "between"; render();
@@ -712,12 +723,12 @@ async function submitScore(initials, userState, correct, overall) {
   const today = new Date().toISOString().split('T')[0];
   const emojis = state.results.map(r => r.tier.emoji).join('');
   try {
-    const { error } = await sb.from('game_scores').insert({
+    const { error } = YKB_IS_PREVIEW ? {} : await sb.from('game_scores').insert({
       initials, state: userState, score: correct,
       tier: overall.name, day_number: dayNum, game_date: today, emoji_string: emojis
     });
     if (error) throw error;
-    localStorage.setItem('ykb_submitted', today);
+    if (!YKB_IS_PREVIEW) localStorage.setItem('ykb_submitted', today);
     document.getElementById('modal-root').innerHTML = `
       <div class="modal-overlay">
         <div class="modal">
@@ -725,7 +736,7 @@ async function submitScore(initials, userState, correct, overall) {
           <div class="modal-success">
             <div class="modal-success-emoji">🟩</div>
             <div class="modal-success-title">You're On The Board.</div>
-            <div class="modal-success-sub">${initials} · ${userState}<br>Score posted to the leaderboard.</div>
+            <div class="modal-success-sub">${initials} · ${userState}<br>${YKB_IS_PREVIEW ? 'Preview build — score not posted.' : 'Score posted to the leaderboard.'}</div>
             <a href="/leaderboard.html" style="margin-top:8px;background:var(--red);color:var(--white);font-family:var(--font-d);font-size:18px;letter-spacing:3px;padding:14px 32px;border-radius:10px;text-decoration:none;display:inline-block">View Leaderboard</a>
             <button onclick="document.getElementById('modal-root').innerHTML=''" style="background:transparent;border:none;color:#444;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:-8px">Close</button>
           </div>
