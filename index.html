@@ -166,7 +166,7 @@
     <div id="game-root"></div>
   </section>
 
-  <section class="home-section">
+  <section class="home-section" id="moreGames">
     <div class="section-kicker">More games</div>
     <a class="game-card" href="/nts.html">
       <div class="game-num">01</div>
@@ -350,6 +350,10 @@ async function init() {
 function render() {
   const root = document.getElementById("game-root");
   const { idx, hints, guess, results, phase, flash, suggestions } = state;
+  // The results screen has its own "Up next" rail — hide the homepage "More games"
+  // section while results show so the same three games don't appear twice.
+  const mg = document.getElementById("moreGames");
+  if (mg) mg.style.display = phase === "results" ? "none" : "";
 
   if (phase === "rules") {
     const modalRoot = document.getElementById("modal-root");
