@@ -263,6 +263,8 @@
         <div style="text-align:right">Best</div>`;
     } else {
       timeTabs.style.display = 'flex';
+      // All-time makes no sense for the daily — every day is a different 10 players
+      document.getElementById('tabAlltime').style.display = 'none';
       currentTab = 'today';
       document.getElementById('tableHeader').innerHTML = `
         <div>#</div><div>Player</div>
