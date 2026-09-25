@@ -20,7 +20,7 @@
     #site{width:100%;max-width:480px;min-height:100vh;background:var(--black);display:flex;flex-direction:column;position:relative;border-left:1px solid #161616;border-right:1px solid #161616}
     /* ── sticky header ── */
     .site-header{background:rgba(10,10,10,.96);backdrop-filter:blur(8px);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--slate)}
-    .wordmark{font-family:var(--font-d);font-size:26px;letter-spacing:2px;color:var(--white);line-height:1}
+    .wordmark{font-family:var(--font-d);font-size:26px;letter-spacing:2px;color:var(--white);line-height:1;text-decoration:none}
     .header-right{display:flex;align-items:center;gap:8px}
     .pill{border-radius:999px;padding:8px 14px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
     .pill-day{background:var(--red);color:var(--white)}
@@ -151,7 +151,7 @@
 <body>
 <div id="site">
   <header class="site-header">
-    <div class="wordmark">YOUKNOWBALL.</div>
+    <a href="/" class="wordmark">YOUKNOWBALL.</a>
     <div class="header-right">
       <div class="pill pill-day" id="dayPill">DAY #&ndash;</div>
       <div class="pill pill-streak" id="streakPill" style="display:none">0 STREAK</div>
