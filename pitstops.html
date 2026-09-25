@@ -269,29 +269,16 @@ function render() {
 
 function renderRules() {
   document.getElementById('screen').innerHTML = `
-    <div class="rules-wrap">
+    <div class="rules-wrap" style="justify-content:center;gap:26px">
       <div>
         <div class="rules-eyebrow">YouKnowBall · Career Trail</div>
-        <div class="rules-title">PIT<br>STOPS.</div>
-        <div class="rules-sub" style="margin-top:10px">5 NFL players. College and the full career trail are on the board from the start. Name the player — with as few hints as possible.</div>
+        <div class="rules-title" style="font-size:46px;line-height:1">PIT STOPS.</div>
+        <div class="rules-sub" style="margin-top:12px;font-size:19px;color:#fff;font-weight:600;line-height:1.5">5 players. Every career trail is on the board — name them.</div>
       </div>
-      <div class="rules-list">
-        <div class="rule-row">
-          <div class="rule-icon">🛣️</div>
-          <div><div class="rule-title">The Trail Is Open</div><div class="rule-text">Every team, in career order, visible from the jump. This is a film-room game.</div></div>
-        </div>
-        <div class="rule-row">
-          <div class="rule-icon">🔍</div>
-          <div><div class="rule-title">Two Hints</div><div class="rule-text">Reveal position, then jersey number. But hints cost you the pin — solve it cold for 📍.</div></div>
-        </div>
-        <div class="rule-row">
-          <div class="rule-icon">✖️</div>
-          <div><div class="rule-title">Three Strikes</div><div class="rule-text">Three wrong guesses ends the round as a miss. Your misses stay on the board.</div></div>
-        </div>
-        <div class="rule-row">
-          <div class="rule-icon">📍</div>
-          <div><div class="rule-title">Report Card</div><div class="rule-text">📍 solved it cold · 🗺️ needed a hint · 🗑️ struck out.</div></div>
-        </div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;color:rgba(255,255,255,.75)">
+        <div><span style="font-size:18px">📍</span>&nbsp;&nbsp;solve it cold</div>
+        <div><span style="font-size:18px">🗺️</span>&nbsp;&nbsp;take a hint — position, then jersey #</div>
+        <div><span style="font-size:18px">🗑️</span>&nbsp;&nbsp;three wrong guesses and the round's a miss</div>
       </div>
       <button class="btn-play" id="btn-start">LET'S ROLL</button>
     </div>`;
@@ -338,7 +325,6 @@ function renderGame() {
     <div class="game-wrap">
       <div class="round-counter">
         <div><div class="round-label">Player</div><div class="round-num">${S.round + 1} / ${ROUNDS}</div></div>
-        <div style="text-align:right"><div class="round-label">Pin it</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.hints === 0 ? '#22c55e' : 'var(--white)'}">${S.hints === 0 ? '📍 on the table' : '🗺️ at best'}</div></div>
       </div>
 
       <div class="${cardCls}" id="tc">
