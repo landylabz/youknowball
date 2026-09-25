@@ -64,9 +64,6 @@
     @keyframes stopIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
     .stop-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
     .stop-name{font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
-    .stop-hidden{flex:1;display:flex;align-items:center;gap:10px}
-    .stop-line{flex:1;height:1px;border-top:1px dashed #252525}
-    .stop-lock{font-size:9px;color:#252525;font-weight:700;letter-spacing:2px}
     .stop-connector{width:1px;height:10px;background:#252525;margin-left:28px}
 
     /* REVEAL BTN */
@@ -74,6 +71,14 @@
     .btn-reveal:hover:not(:disabled){border-color:var(--red);color:var(--red)}
     .btn-reveal:disabled{opacity:.2;cursor:not-allowed}
     .reveal-cost{color:var(--red);font-size:13px}
+    .open-pill.locked .open-pill-val{color:#3a3a3a}
+    .misses{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .miss-label{font-size:9px;font-weight:700;letter-spacing:3px;color:var(--ash);text-transform:uppercase}
+    .miss-chip{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#ef4444;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+    .strikes-line{text-align:center;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash)}
+    .res-score{font-family:var(--font-d);font-size:64px;letter-spacing:2px;color:var(--white);position:relative;line-height:1}
+    .res-max{font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.4);position:relative}
+    .suggestions{max-height:190px;overflow-y:auto}
 
     /* INPUT */
     .input-wrap{position:relative}
@@ -148,7 +153,7 @@
     <a href="/" class="wordmark">YOUKNOWBALL.</a>
     <div class="header-right">
       <div class="header-mode">PIT STOPS</div>
-      <div class="header-sub">Career Trail</div>
+      <div class="header-sub">Career Trail · <span id="hdrScore">0 PTS</span></div>
     </div>
   </header>
   <div class="progress" id="pips"></div>
@@ -166,12 +171,17 @@ const ROUNDS = 5;
 const HIT_EMOJI  = '📍';
 const MISS_EMOJI = '❌';
 
-// How many reveals before locking out (max reveals per player = stops.length)
-// Scoring: guess with 0 reveals = FIRST CLASS, 1 = BUSINESS, etc.
-const TIER_LABELS = ['FIRST CLASS', 'BUSINESS', 'ECONOMY', 'STANDBY', 'LAST CALL'];
+// Scoring: 1000 pts per round. Each hint −250, each wrong guess −100.
+// Tier is pure flair: 0 hints = FIRST CLASS, 1 = BUSINESS, 2 = ECONOMY.
+const PTS_BASE = 1000, PTS_HINT = 250, PTS_MISS = 100, MAX_MISSES = 3;
+const TIER_LABELS = ['FIRST CLASS', 'BUSINESS', 'ECONOMY'];
 
-function getTierLabel(reveals) {
-  return TIER_LABELS[Math.min(reveals, TIER_LABELS.length - 1)];
+function getTierLabel(hints) {
+  return TIER_LABELS[Math.min(hints, TIER_LABELS.length - 1)];
+}
+
+function roundPoints() {
+  return Math.max(0, PTS_BASE - PTS_HINT * S.hints - PTS_MISS * S.misses.length);
 }
 
 function getDaySeed() {
@@ -190,7 +200,7 @@ function seededShuffle(arr, seed) {
 }
 
 let players = [], allNames = [];
-let S = { round: 0, reveals: 0, guess: '', suggs: [], flash: null, results: [], phase: 'loading', wrong: 0 };
+let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, results: [], phase: 'loading' };
 
 async function init() {
   render();
@@ -216,6 +226,14 @@ async function init() {
       }
     }
     players = pool.slice(0, ROUNDS);
+    // Merge jersey numbers from the players table (may be null for retired
+    // players until the jersey refresh lands — the game degrades gracefully).
+    try {
+      const { data: jrows } = await sb.from('players').select('name,jersey_number').in('name', players.map(p => p.player_name));
+      const jmap = {};
+      (jrows || []).forEach(j => { if (jmap[j.name.toLowerCase()] === undefined) jmap[j.name.toLowerCase()] = j.jersey_number; });
+      players.forEach(p => { p.jersey_number = jmap[p.player_name.toLowerCase()] ?? null; });
+    } catch (e) { console.error('jersey merge failed', e); }
     S.phase = 'rules';
   } catch (e) {
     console.error(e);
@@ -249,6 +267,8 @@ function renderPips() {
 
 function render() {
   renderPips();
+  const hs = document.getElementById('hdrScore');
+  if (hs) hs.textContent = S.score.toLocaleString() + ' PTS';
   const el = document.getElementById('screen');
   if (S.phase === 'loading')  { el.innerHTML = `<div class="loading-screen"><div class="loading-text">LOADING...</div><div class="loading-sub">Building career trails</div></div>`; return; }
   if (S.phase === 'rules')    { renderRules(); return; }
@@ -261,26 +281,26 @@ function renderRules() {
   document.getElementById('screen').innerHTML = `
     <div class="rules-wrap">
       <div>
-        <div class="rules-eyebrow">YouKnowBall · New Mode</div>
+        <div class="rules-eyebrow">YouKnowBall · Career Trail</div>
         <div class="rules-title">PIT<br>STOPS.</div>
-        <div class="rules-sub" style="margin-top:10px">5 NFL players. Each one bounced around the league. Guess who from their career trail.</div>
+        <div class="rules-sub" style="margin-top:10px">5 NFL players. College and the full career trail are on the board from the start. Name the player — with as few hints as possible.</div>
       </div>
       <div class="rules-list">
         <div class="rule-row">
-          <div class="rule-icon">🎓</div>
-          <div><div class="rule-title">Always Visible</div><div class="rule-text">College and position are open from the start. Guess immediately for maximum credit.</div></div>
+          <div class="rule-icon">🛣️</div>
+          <div><div class="rule-title">The Trail Is Open</div><div class="rule-text">Every team, in career order, visible from the jump. This is a film-room game.</div></div>
         </div>
         <div class="rule-row">
-          <div class="rule-icon">📍</div>
-          <div><div class="rule-title">Reveal Pit Stops</div><div class="rule-text">Teams are revealed in career order. Each reveal you use makes the round easier — but costs you.</div></div>
+          <div class="rule-icon">🔍</div>
+          <div><div class="rule-title">Two Hints</div><div class="rule-text">Reveal position, then jersey number. Each hint costs you 250 pts.</div></div>
         </div>
         <div class="rule-row">
-          <div class="rule-icon">✈️</div>
-          <div><div class="rule-title">Wrong Guesses Are Free</div><div class="rule-text">Bad guesses don't hurt you. But they don't reveal anything either. Use them wisely.</div></div>
+          <div class="rule-icon">✖️</div>
+          <div><div class="rule-title">Three Strikes</div><div class="rule-text">Three wrong guesses ends the round as a miss. Your misses stay on the board.</div></div>
         </div>
         <div class="rule-row">
-          <div class="rule-icon">📍 vs ❌</div>
-          <div><div class="rule-title">Pin It or Miss It</div><div class="rule-text">Get it right = 📍. Strike out on all stops = ❌. Simple as that.</div></div>
+          <div class="rule-icon">🏆</div>
+          <div><div class="rule-title">Scoring</div><div class="rule-text">1,000 pts per round. Hints −250, wrong guesses −100. Max 5,000.</div></div>
         </div>
       </div>
       <button class="btn-play" id="btn-start">LET'S ROLL</button>
@@ -291,30 +311,46 @@ function renderRules() {
 function renderGame() {
   const p = players[S.round];
   const stops = p.career_stops;
-  const revealed = stops.slice(0, S.reveals);
-  const hidden = stops.length - S.reveals;
-  const canReveal = S.reveals < stops.length;
   const cardCls = `trail-card${S.flash === 'correct' ? ' flash-correct' : S.flash === 'wrong' ? ' flash-wrong' : ''}`;
 
+  // Full trail is always visible — that's the game now.
   let stopsHtml = '';
-  revealed.forEach((stop, i) => {
-    stopsHtml += `<div class="stop-row"><div class="stop-num">${i + 1}</div><div class="stop-revealed" style="animation-delay:${i * .05}s"><div class="stop-dot"></div><div class="stop-name">${stop}</div></div></div>`;
-    if (i < revealed.length - 1 || hidden > 0) stopsHtml += `<div class="stop-connector"></div>`;
+  stops.forEach((stop, i) => {
+    stopsHtml += `<div class="stop-row"><div class="stop-num">${i + 1}</div><div class="stop-revealed"><div class="stop-dot"></div><div class="stop-name">${stop}</div></div></div>`;
+    if (i < stops.length - 1) stopsHtml += `<div class="stop-connector"></div>`;
   });
-  for (let i = 0; i < hidden; i++) {
-    stopsHtml += `<div class="stop-row"><div class="stop-num">${S.reveals + i + 1}</div><div class="stop-hidden"><div class="stop-line"></div><div class="stop-lock">LOCKED</div></div></div>`;
-    if (i < hidden - 1) stopsHtml += `<div class="stop-connector"></div>`;
+
+  const tierNow = getTierLabel(S.hints);
+  const ptsNow = roundPoints();
+  const jerseyKnown = p.jersey_number != null;
+
+  const posPill = S.posRevealed
+    ? `<div class="open-pill"><div class="open-pill-label">Position</div><div class="open-pill-val">${p.position}</div></div>`
+    : `<div class="open-pill locked"><div class="open-pill-label">Position</div><div class="open-pill-val">?</div></div>`;
+  const jerPill = S.jerRevealed
+    ? `<div class="open-pill"><div class="open-pill-label">Jersey #</div><div class="open-pill-val">${p.jersey_number}</div></div>`
+    : `<div class="open-pill locked"><div class="open-pill-label">Jersey #</div><div class="open-pill-val">?</div></div>`;
+
+  let hintBtns;
+  if (!S.posRevealed) {
+    hintBtns = `<button class="btn-reveal" id="btn-hint-pos"><span>Reveal position</span><span class="reveal-cost">→ −250 pts</span></button>`;
+  } else if (!S.jerRevealed) {
+    hintBtns = jerseyKnown
+      ? `<button class="btn-reveal" id="btn-hint-jer"><span>Reveal jersey #</span><span class="reveal-cost">→ −250 pts</span></button>`
+      : `<button class="btn-reveal" disabled>Jersey # — no data yet</button>`;
+  } else {
+    hintBtns = `<button class="btn-reveal" disabled>All hints used</button>`;
   }
 
-  // Tier label based on reveals so far
-  const tierNow = getTierLabel(S.reveals);
-  const tierNext = canReveal ? getTierLabel(S.reveals + 1) : null;
+  const missesHtml = S.misses.length
+    ? `<div class="misses"><span class="miss-label">Strikes ${S.misses.length}/${MAX_MISSES}</span>${S.misses.map(m => `<span class="miss-chip">${m}</span>`).join('')}</div>`
+    : `<div class="strikes-line">${MAX_MISSES} strikes per round</div>`;
 
   document.getElementById('screen').innerHTML = `
     <div class="game-wrap">
       <div class="round-counter">
         <div><div class="round-label">Player</div><div class="round-num">${S.round + 1} / ${ROUNDS}</div></div>
-        <div style="text-align:right"><div class="round-label">Guess Now</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.reveals === 0 ? '#22c55e' : 'var(--white)'}">${tierNow}</div></div>
+        <div style="text-align:right"><div class="round-label">Guess Now</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.hints === 0 ? '#22c55e' : 'var(--white)'}">${tierNow}</div><div class="round-label" style="margin-top:2px">${ptsNow.toLocaleString()} pts on the table</div></div>
       </div>
 
       <div class="${cardCls}" id="tc">
@@ -322,18 +358,14 @@ function renderGame() {
           <div class="trail-meta">CAREER TRAIL — ALWAYS VISIBLE</div>
           <div class="trail-open">
             <div class="open-pill"><div class="open-pill-label">College</div><div class="open-pill-val">${p.college}</div></div>
-            <div class="open-pill"><div class="open-pill-label">Position</div><div class="open-pill-val">${p.position}</div></div>
+            ${posPill}${jerPill}
           </div>
         </div>
         <div class="trail-stops">${stopsHtml}</div>
       </div>
 
-      ${canReveal
-        ? `<button class="btn-reveal" id="btn-rev">
-            <span>Reveal pit stop #${S.reveals + 1}</span>
-            <span class="reveal-cost">→ drops to ${tierNext}</span>
-           </button>`
-        : `<button class="btn-reveal" disabled>All ${stops.length} stops revealed</button>`}
+      ${hintBtns}
+      ${missesHtml}
 
       <div class="input-wrap">
         <input class="guess-input" id="gi" value="${S.guess.replace(/"/g, '&quot;')}"
@@ -354,7 +386,8 @@ function renderGame() {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
   }
   document.getElementById('bs')?.addEventListener('click', submit);
-  document.getElementById('btn-rev')?.addEventListener('click', doReveal);
+  document.getElementById('btn-hint-pos')?.addEventListener('click', () => doHint('pos'));
+  document.getElementById('btn-hint-jer')?.addEventListener('click', () => doHint('jer'));
   document.querySelectorAll('.suggestion').forEach(el => {
     el.addEventListener('mousedown', e => { e.preventDefault(); S.guess = el.dataset.val; S.suggs = []; submit(el.dataset.val); });
   });
@@ -372,7 +405,7 @@ function renderBetween() {
   });
 
   const isHit = last.correct;
-  const tierLabel = isHit ? getTierLabel(last.reveals) : 'MISSED';
+  const tierLabel = isHit ? getTierLabel(last.hints) : 'STRUCK OUT';
 
   document.getElementById('screen').innerHTML = `
     <div class="between">
@@ -381,6 +414,7 @@ function renderBetween() {
         <div class="between-label" style="color:${isHit ? '#22c55e' : '#ef4444'}">${tierLabel}</div>
         <div class="between-player">${p.player_name}</div>
         <div class="between-detail">${p.college} · ${p.position}</div>
+        <div class="between-detail" style="color:${isHit ? '#22c55e' : '#444'}">+${last.points.toLocaleString()} PTS</div>
       </div>
       <div class="full-trail">
         <div style="font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--ash);margin-bottom:8px">FULL CAREER TRAIL</div>
@@ -404,12 +438,15 @@ function renderResults() {
     0: "Everyone needed a map. Respect the honesty."
   };
   const tagline = taglines[hits] || "You showed up.";
-  const shareText = `I scored ${emojiRow} at youknowball.io/pitstops.html`;
+  const total = S.results.reduce((a, r) => a + r.points, 0);
+  const shareText = `PIT STOPS · ${total.toLocaleString()}/5,000\n${emojiRow}\nyouknowball.io`;
 
   document.getElementById('screen').innerHTML = `
     <div class="results">
       <div class="results-hero">
         <div class="res-label">PIT STOPS · YouKnowBall.io</div>
+        <div class="res-score">${total.toLocaleString()}</div>
+        <div class="res-max">/ 5,000 PTS</div>
         <div class="res-pins">${emojiRow}</div>
         <div class="res-tagline">"${tagline}"</div>
       </div>
@@ -422,13 +459,13 @@ function renderResults() {
               <div class="res-name">${r.player.player_name}</div>
               <div class="res-detail">${r.player.college} · ${r.player.position}</div>
             </div>
-            <div class="res-stops" style="color:${r.correct ? '#22c55e' : '#444'}">${r.correct ? getTierLabel(r.reveals) : 'MISS'}</div>
+            <div class="res-stops" style="color:${r.correct ? '#22c55e' : '#444'}">${r.correct ? '+' + r.points.toLocaleString() : 'MISS'}</div>
           </div>`).join('')}
       </div>
 
       <div class="share-box">
         <div class="share-preview">
-          <strong>I scored ${emojiRow} at youknowball.io</strong>
+          <strong>PIT STOPS · ${total.toLocaleString()}/5,000</strong><br>${emojiRow}
         </div>
         <button class="btn-share" id="bsh">SHARE RESULTS</button>
       </div>
@@ -474,17 +511,16 @@ function renderResults() {
   });
 
   document.getElementById('bag').addEventListener('click', () => {
-    S = { round: 0, reveals: 0, guess: '', suggs: [], flash: null, results: [], phase: 'rules', wrong: 0 };
+    S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, results: [], phase: 'rules' };
     render();
   });
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────
 
-function doReveal() {
-  const p = players[S.round];
-  if (S.reveals >= p.career_stops.length) return;
-  S.reveals++;
+function doHint(which) {
+  if (which === 'pos' && !S.posRevealed) { S.posRevealed = true; S.hints++; }
+  if (which === 'jer' && S.posRevealed && !S.jerRevealed) { S.jerRevealed = true; S.hints++; }
   S.suggs = [];
   render();
 }
@@ -505,22 +541,25 @@ function submit(override) {
   S.suggs = [];
 
   if (correct) {
+    const pts = roundPoints();
+    S.score += pts;
     S.flash = 'correct';
     render();
     setTimeout(() => {
       S.flash = null;
-      S.results.push({ player: p, correct: true, reveals: S.reveals });
+      S.results.push({ player: p, correct: true, hints: S.hints, misses: S.misses.length, points: pts });
       advance();
     }, 500);
   } else {
-    S.wrong = (S.wrong || 0) + 1;
+    S.misses.push(val);
+    S.guess = '';
     S.flash = 'wrong';
     render();
     setTimeout(() => {
       S.flash = null;
-      // If all stops revealed and wrong, auto-advance as a miss
-      if (S.reveals >= p.career_stops.length) {
-        S.results.push({ player: p, correct: false, reveals: S.reveals });
+      if (S.misses.length >= MAX_MISSES) {
+        // Struck out — round is a miss, no points
+        S.results.push({ player: p, correct: false, hints: S.hints, misses: S.misses.length, points: 0 });
         advance();
       } else {
         render();
@@ -537,9 +576,11 @@ function advance() {
       S.phase = 'results';
     } else {
       S.round++;
-      S.reveals = 0;
+      S.hints = 0;
+      S.posRevealed = false;
+      S.jerRevealed = false;
+      S.misses = [];
       S.guess = '';
-      S.wrong = 0;
       S.phase = 'playing';
     }
     render();
