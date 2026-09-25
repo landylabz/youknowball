@@ -179,7 +179,7 @@ if (YKB_IS_PREVIEW) {
 
 const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-let COLLEGES = [];
+let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
 // Hint unlock thresholds — earn a hint when you REACH these streaks
 const HINT_UNLOCK_AT = [5, 10, 15, 20, 25];
@@ -226,8 +226,11 @@ async function init() {
       .select('id, name, college, position, nfl_team, conference, difficulty_tier, jersey_number').eq('validated', true);
     if (error) throw error;
     allPlayers = data;
-    const cols = await sb.from('players').select('college');
-    if (cols.data) COLLEGES = [...new Set(cols.data.map(p => p.college))].sort();
+    // Suggestion pool = validated players' schools (the true answer set, split on ";" for transfers)
+    // unioned with the curated fallback list. (A separate unfiltered college query was dropped:
+    // Supabase caps it at 1000 rows, silently omitting schools.)
+    const dbSchools = data.flatMap(p => (p.college || "").split(";").map(c => c.trim())).filter(Boolean);
+    COLLEGES = [...new Set([...COLLEGES, ...dbSchools])].sort();
   } catch(err) {
     console.error('Failed to load:', err);
   }
@@ -347,10 +350,21 @@ function useHint() {
   render();
 }
 
+// Aggie rule: Texas A&M always ranks above Texas (and other peers) in suggestions.
+const BOOSTED_SCHOOLS = ["texas a&m"];
 function updateSuggestions(val) {
   if (val.length < 2) { state.suggestions = []; render(); return; }
   const q = val.toLowerCase();
-  state.suggestions = COLLEGES.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  const isBoosted = s => BOOSTED_SCHOOLS.includes(s.toLowerCase());
+  state.suggestions = COLLEGES.filter(c => c.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const aPre = a.toLowerCase().startsWith(q), bPre = b.toLowerCase().startsWith(q);
+      if (aPre !== bPre) return aPre ? -1 : 1; // prefix matches first
+      const aB = isBoosted(a), bB = isBoosted(b);
+      if (aB !== bB) return aB ? -1 : 1;       // boosted schools next
+      return a.localeCompare(b);
+    })
+    .slice(0, 6);
   render();
 }
 
