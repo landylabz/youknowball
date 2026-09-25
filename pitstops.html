@@ -64,9 +64,6 @@
     @keyframes stopIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
     .stop-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
     .stop-name{font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--white)}
-    .stop-hidden{flex:1;display:flex;align-items:center;gap:10px}
-    .stop-line{flex:1;height:1px;border-top:1px dashed #252525}
-    .stop-lock{font-size:9px;color:#252525;font-weight:700;letter-spacing:2px}
     .stop-connector{width:1px;height:10px;background:#252525;margin-left:28px}
 
     /* REVEAL BTN */
@@ -74,6 +71,12 @@
     .btn-reveal:hover:not(:disabled){border-color:var(--red);color:var(--red)}
     .btn-reveal:disabled{opacity:.2;cursor:not-allowed}
     .reveal-cost{color:var(--red);font-size:13px}
+    .open-pill.locked .open-pill-val{color:#3a3a3a}
+    .misses{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .miss-label{font-size:9px;font-weight:700;letter-spacing:3px;color:var(--ash);text-transform:uppercase}
+    .miss-chip{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#ef4444;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+    .strikes-line{text-align:center;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--ash)}
+    .suggestions{max-height:190px;overflow-y:auto}
 
     /* INPUT */
     .input-wrap{position:relative}
@@ -163,15 +166,14 @@ const sb = createClient(
 );
 
 const ROUNDS = 5;
-const HIT_EMOJI  = '📍';
-const MISS_EMOJI = '❌';
 
-// How many reveals before locking out (max reveals per player = stops.length)
-// Scoring: guess with 0 reveals = FIRST CLASS, 1 = BUSINESS, etc.
-const TIER_LABELS = ['FIRST CLASS', 'BUSINESS', 'ECONOMY', 'STANDBY', 'LAST CALL'];
+// Report card: 📍 solved cold (no hints), 🗺️ needed a hint, 🗑️ struck out.
+const MAX_MISSES = 3;
+const GRADE_EMOJI = { pin: '📍', map: '🗺️', miss: '🗑️' };
 
-function getTierLabel(reveals) {
-  return TIER_LABELS[Math.min(reveals, TIER_LABELS.length - 1)];
+function gradeFor(r) {
+  if (!r.correct) return 'miss';
+  return r.hints === 0 ? 'pin' : 'map';
 }
 
 function getDaySeed() {
@@ -190,7 +192,7 @@ function seededShuffle(arr, seed) {
 }
 
 let players = [], allNames = [];
-let S = { round: 0, reveals: 0, guess: '', suggs: [], flash: null, results: [], phase: 'loading', wrong: 0 };
+let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'loading' };
 
 async function init() {
   render();
@@ -216,6 +218,14 @@ async function init() {
       }
     }
     players = pool.slice(0, ROUNDS);
+    // Merge jersey numbers from the players table (may be null for retired
+    // players until the jersey refresh lands — the game degrades gracefully).
+    try {
+      const { data: jrows } = await sb.from('players').select('name,jersey_number').in('name', players.map(p => p.player_name));
+      const jmap = {};
+      (jrows || []).forEach(j => { if (jmap[j.name.toLowerCase()] === undefined) jmap[j.name.toLowerCase()] = j.jersey_number; });
+      players.forEach(p => { p.jersey_number = jmap[p.player_name.toLowerCase()] ?? null; });
+    } catch (e) { console.error('jersey merge failed', e); }
     S.phase = 'rules';
   } catch (e) {
     console.error(e);
@@ -261,26 +271,26 @@ function renderRules() {
   document.getElementById('screen').innerHTML = `
     <div class="rules-wrap">
       <div>
-        <div class="rules-eyebrow">YouKnowBall · New Mode</div>
+        <div class="rules-eyebrow">YouKnowBall · Career Trail</div>
         <div class="rules-title">PIT<br>STOPS.</div>
-        <div class="rules-sub" style="margin-top:10px">5 NFL players. Each one bounced around the league. Guess who from their career trail.</div>
+        <div class="rules-sub" style="margin-top:10px">5 NFL players. College and the full career trail are on the board from the start. Name the player — with as few hints as possible.</div>
       </div>
       <div class="rules-list">
         <div class="rule-row">
-          <div class="rule-icon">🎓</div>
-          <div><div class="rule-title">Always Visible</div><div class="rule-text">College and position are open from the start. Guess immediately for maximum credit.</div></div>
+          <div class="rule-icon">🛣️</div>
+          <div><div class="rule-title">The Trail Is Open</div><div class="rule-text">Every team, in career order, visible from the jump. This is a film-room game.</div></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div><div class="rule-title">Two Hints</div><div class="rule-text">Reveal position, then jersey number. But hints cost you the pin — solve it cold for 📍.</div></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✖️</div>
+          <div><div class="rule-title">Three Strikes</div><div class="rule-text">Three wrong guesses ends the round as a miss. Your misses stay on the board.</div></div>
         </div>
         <div class="rule-row">
           <div class="rule-icon">📍</div>
-          <div><div class="rule-title">Reveal Pit Stops</div><div class="rule-text">Teams are revealed in career order. Each reveal you use makes the round easier — but costs you.</div></div>
-        </div>
-        <div class="rule-row">
-          <div class="rule-icon">✈️</div>
-          <div><div class="rule-title">Wrong Guesses Are Free</div><div class="rule-text">Bad guesses don't hurt you. But they don't reveal anything either. Use them wisely.</div></div>
-        </div>
-        <div class="rule-row">
-          <div class="rule-icon">📍 vs ❌</div>
-          <div><div class="rule-title">Pin It or Miss It</div><div class="rule-text">Get it right = 📍. Strike out on all stops = ❌. Simple as that.</div></div>
+          <div><div class="rule-title">Report Card</div><div class="rule-text">📍 solved it cold · 🗺️ needed a hint · 🗑️ struck out.</div></div>
         </div>
       </div>
       <button class="btn-play" id="btn-start">LET'S ROLL</button>
@@ -291,30 +301,44 @@ function renderRules() {
 function renderGame() {
   const p = players[S.round];
   const stops = p.career_stops;
-  const revealed = stops.slice(0, S.reveals);
-  const hidden = stops.length - S.reveals;
-  const canReveal = S.reveals < stops.length;
   const cardCls = `trail-card${S.flash === 'correct' ? ' flash-correct' : S.flash === 'wrong' ? ' flash-wrong' : ''}`;
 
+  // Full trail is always visible — that's the game now.
   let stopsHtml = '';
-  revealed.forEach((stop, i) => {
-    stopsHtml += `<div class="stop-row"><div class="stop-num">${i + 1}</div><div class="stop-revealed" style="animation-delay:${i * .05}s"><div class="stop-dot"></div><div class="stop-name">${stop}</div></div></div>`;
-    if (i < revealed.length - 1 || hidden > 0) stopsHtml += `<div class="stop-connector"></div>`;
+  stops.forEach((stop, i) => {
+    stopsHtml += `<div class="stop-row"><div class="stop-num">${i + 1}</div><div class="stop-revealed"><div class="stop-dot"></div><div class="stop-name">${stop}</div></div></div>`;
+    if (i < stops.length - 1) stopsHtml += `<div class="stop-connector"></div>`;
   });
-  for (let i = 0; i < hidden; i++) {
-    stopsHtml += `<div class="stop-row"><div class="stop-num">${S.reveals + i + 1}</div><div class="stop-hidden"><div class="stop-line"></div><div class="stop-lock">LOCKED</div></div></div>`;
-    if (i < hidden - 1) stopsHtml += `<div class="stop-connector"></div>`;
+
+  const jerseyKnown = p.jersey_number != null;
+
+  const posPill = S.posRevealed
+    ? `<div class="open-pill"><div class="open-pill-label">Position</div><div class="open-pill-val">${p.position}</div></div>`
+    : `<div class="open-pill locked"><div class="open-pill-label">Position</div><div class="open-pill-val">?</div></div>`;
+  const jerPill = S.jerRevealed
+    ? `<div class="open-pill"><div class="open-pill-label">Jersey #</div><div class="open-pill-val">${p.jersey_number}</div></div>`
+    : `<div class="open-pill locked"><div class="open-pill-label">Jersey #</div><div class="open-pill-val">?</div></div>`;
+
+  let hintBtns;
+  if (!S.posRevealed) {
+    hintBtns = `<button class="btn-reveal" id="btn-hint-pos"><span>Reveal position</span><span class="reveal-cost">→ 🗺️ max</span></button>`;
+  } else if (!S.jerRevealed) {
+    hintBtns = jerseyKnown
+      ? `<button class="btn-reveal" id="btn-hint-jer"><span>Reveal jersey #</span><span class="reveal-cost">→ 🗺️ max</span></button>`
+      : `<button class="btn-reveal" disabled>Jersey # — no data yet</button>`;
+  } else {
+    hintBtns = `<button class="btn-reveal" disabled>All hints used</button>`;
   }
 
-  // Tier label based on reveals so far
-  const tierNow = getTierLabel(S.reveals);
-  const tierNext = canReveal ? getTierLabel(S.reveals + 1) : null;
+  const missesHtml = S.misses.length
+    ? `<div class="misses"><span class="miss-label">Strikes ${S.misses.length}/${MAX_MISSES}</span>${S.misses.map(m => `<span class="miss-chip">${m}</span>`).join('')}</div>`
+    : `<div class="strikes-line">${MAX_MISSES} strikes per round</div>`;
 
   document.getElementById('screen').innerHTML = `
     <div class="game-wrap">
       <div class="round-counter">
         <div><div class="round-label">Player</div><div class="round-num">${S.round + 1} / ${ROUNDS}</div></div>
-        <div style="text-align:right"><div class="round-label">Guess Now</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.reveals === 0 ? '#22c55e' : 'var(--white)'}">${tierNow}</div></div>
+        <div style="text-align:right"><div class="round-label">Pin it</div><div style="font-family:var(--font-h);font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:${S.hints === 0 ? '#22c55e' : 'var(--white)'}">${S.hints === 0 ? '📍 on the table' : '🗺️ at best'}</div></div>
       </div>
 
       <div class="${cardCls}" id="tc">
@@ -322,18 +346,14 @@ function renderGame() {
           <div class="trail-meta">CAREER TRAIL — ALWAYS VISIBLE</div>
           <div class="trail-open">
             <div class="open-pill"><div class="open-pill-label">College</div><div class="open-pill-val">${p.college}</div></div>
-            <div class="open-pill"><div class="open-pill-label">Position</div><div class="open-pill-val">${p.position}</div></div>
+            ${posPill}${jerPill}
           </div>
         </div>
         <div class="trail-stops">${stopsHtml}</div>
       </div>
 
-      ${canReveal
-        ? `<button class="btn-reveal" id="btn-rev">
-            <span>Reveal pit stop #${S.reveals + 1}</span>
-            <span class="reveal-cost">→ drops to ${tierNext}</span>
-           </button>`
-        : `<button class="btn-reveal" disabled>All ${stops.length} stops revealed</button>`}
+      ${hintBtns}
+      ${S.poolMsg ? `<div class="strikes-line" style="color:#ef4444">Not in the player pool — no strike</div>` : missesHtml}
 
       <div class="input-wrap">
         <input class="guess-input" id="gi" value="${S.guess.replace(/"/g, '&quot;')}"
@@ -354,7 +374,8 @@ function renderGame() {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
   }
   document.getElementById('bs')?.addEventListener('click', submit);
-  document.getElementById('btn-rev')?.addEventListener('click', doReveal);
+  document.getElementById('btn-hint-pos')?.addEventListener('click', () => doHint('pos'));
+  document.getElementById('btn-hint-jer')?.addEventListener('click', () => doHint('jer'));
   document.querySelectorAll('.suggestion').forEach(el => {
     el.addEventListener('mousedown', e => { e.preventDefault(); S.guess = el.dataset.val; S.suggs = []; submit(el.dataset.val); });
   });
@@ -371,14 +392,16 @@ function renderBetween() {
     if (i < stops.length - 1) trailHtml += `<div class="trail-connector-sm"></div>`;
   });
 
-  const isHit = last.correct;
-  const tierLabel = isHit ? getTierLabel(last.reveals) : 'MISSED';
+  const grade = last.grade;
+  const gradeEmoji = GRADE_EMOJI[grade];
+  const gradeLabel = grade === 'pin' ? 'PINNED IT' : grade === 'map' ? 'NEEDED A HINT' : 'STRUCK OUT';
+  const gradeColor = grade === 'pin' ? '#22c55e' : grade === 'map' ? '#eab308' : '#ef4444';
 
   document.getElementById('screen').innerHTML = `
     <div class="between">
       <div class="between-card">
-        <div class="between-pin">${isHit ? HIT_EMOJI : MISS_EMOJI}</div>
-        <div class="between-label" style="color:${isHit ? '#22c55e' : '#ef4444'}">${tierLabel}</div>
+        <div class="between-pin">${gradeEmoji}</div>
+        <div class="between-label" style="color:${gradeColor}">${gradeLabel}</div>
         <div class="between-player">${p.player_name}</div>
         <div class="between-detail">${p.college} · ${p.position}</div>
       </div>
@@ -391,20 +414,20 @@ function renderBetween() {
 }
 
 function renderResults() {
-  const hits = S.results.filter(r => r.correct).length;
-  const emojiRow = S.results.map(r => r.correct ? HIT_EMOJI : MISS_EMOJI).join('');
+  const emojiRow = S.results.map(r => GRADE_EMOJI[r.grade]).join('');
+  const pins = S.results.filter(r => r.grade === 'pin').length;
 
-  // Tagline based on hit count
+  // Tagline based on pin count
   const taglines = {
-    5: "You know where everyone's been. Uncanny.",
-    4: "Locked in. Real film room energy.",
-    3: "Solid. You've been watching.",
-    2: "A few blind spots. That's okay.",
-    1: "One stop was enough. Barely.",
-    0: "Everyone needed a map. Respect the honesty."
+    5: "Five pins. You don't need the map.",
+    4: "Nearly flawless. The trail holds no secrets.",
+    3: "Sharp. A few detours, but you arrived.",
+    2: "You got there. The map helped.",
+    1: "One clean pin. We'll take it.",
+    0: "The trail won today. Run it back."
   };
-  const tagline = taglines[hits] || "You showed up.";
-  const shareText = `I scored ${emojiRow} at youknowball.io/pitstops.html`;
+  const tagline = taglines[pins];
+  const shareText = `PIT STOPS\n${emojiRow}\nyouknowball.io`;
 
   document.getElementById('screen').innerHTML = `
     <div class="results">
@@ -417,18 +440,18 @@ function renderResults() {
       <div class="result-list">
         ${S.results.map(r => `
           <div class="result-row">
-            <div class="res-emj">${r.correct ? HIT_EMOJI : MISS_EMOJI}</div>
+            <div class="res-emj">${GRADE_EMOJI[r.grade]}</div>
             <div class="res-info">
               <div class="res-name">${r.player.player_name}</div>
               <div class="res-detail">${r.player.college} · ${r.player.position}</div>
             </div>
-            <div class="res-stops" style="color:${r.correct ? '#22c55e' : '#444'}">${r.correct ? getTierLabel(r.reveals) : 'MISS'}</div>
+            <div class="res-stops" style="color:${r.grade === 'pin' ? '#22c55e' : r.grade === 'map' ? '#eab308' : '#444'}">${r.grade === 'pin' ? 'CLEAN' : r.grade === 'map' ? (r.hints + ' HINT' + (r.hints > 1 ? 'S' : '')) : 'MISS'}</div>
           </div>`).join('')}
       </div>
 
       <div class="share-box">
         <div class="share-preview">
-          <strong>I scored ${emojiRow} at youknowball.io</strong>
+          <strong>PIT STOPS</strong><br>${emojiRow}
         </div>
         <button class="btn-share" id="bsh">SHARE RESULTS</button>
       </div>
@@ -474,17 +497,16 @@ function renderResults() {
   });
 
   document.getElementById('bag').addEventListener('click', () => {
-    S = { round: 0, reveals: 0, guess: '', suggs: [], flash: null, results: [], phase: 'rules', wrong: 0 };
+    S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'rules' };
     render();
   });
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────
 
-function doReveal() {
-  const p = players[S.round];
-  if (S.reveals >= p.career_stops.length) return;
-  S.reveals++;
+function doHint(which) {
+  if (which === 'pos' && !S.posRevealed) { S.posRevealed = true; S.hints++; }
+  if (which === 'jer' && S.posRevealed && !S.jerRevealed) { S.jerRevealed = true; S.hints++; }
   S.suggs = [];
   render();
 }
@@ -500,8 +522,18 @@ function submit(override) {
   const val = (override || S.guess).trim();
   if (!val) return;
   const p = players[S.round];
-  const correct = p.player_name.toLowerCase() === val.toLowerCase() ||
-    p.player_name.toLowerCase().includes(val.toLowerCase());
+  // Typo protection: names outside the player pool don't cost a strike.
+  const vl = val.toLowerCase();
+  const inPool = allNames.some(n => { const nl = n.toLowerCase(); return nl === vl || nl.includes(vl); });
+  if (!inPool) {
+    S.flash = 'wrong';
+    S.poolMsg = true;
+    render();
+    setTimeout(() => { S.flash = null; S.poolMsg = false; render(); }, 1100);
+    return;
+  }
+  const correct = p.player_name.toLowerCase() === vl ||
+    p.player_name.toLowerCase().includes(vl);
   S.suggs = [];
 
   if (correct) {
@@ -509,18 +541,22 @@ function submit(override) {
     render();
     setTimeout(() => {
       S.flash = null;
-      S.results.push({ player: p, correct: true, reveals: S.reveals });
+      const r = { player: p, correct: true, hints: S.hints, misses: S.misses.length };
+      r.grade = gradeFor(r);
+      S.results.push(r);
       advance();
     }, 500);
   } else {
-    S.wrong = (S.wrong || 0) + 1;
+    S.misses.push(val);
+    S.guess = '';
     S.flash = 'wrong';
     render();
     setTimeout(() => {
       S.flash = null;
-      // If all stops revealed and wrong, auto-advance as a miss
-      if (S.reveals >= p.career_stops.length) {
-        S.results.push({ player: p, correct: false, reveals: S.reveals });
+      if (S.misses.length >= MAX_MISSES) {
+        // Struck out
+        const r = { player: p, correct: false, hints: S.hints, misses: S.misses.length, grade: 'miss' };
+        S.results.push(r);
         advance();
       } else {
         render();
@@ -537,9 +573,12 @@ function advance() {
       S.phase = 'results';
     } else {
       S.round++;
-      S.reveals = 0;
+      S.hints = 0;
+      S.posRevealed = false;
+      S.jerRevealed = false;
+      S.misses = [];
       S.guess = '';
-      S.wrong = 0;
+      S.poolMsg = false;
       S.phase = 'playing';
     }
     render();
