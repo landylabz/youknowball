@@ -200,7 +200,7 @@ function seededShuffle(arr, seed) {
 }
 
 let players = [], allNames = [];
-let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, results: [], phase: 'loading' };
+let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'loading' };
 
 async function init() {
   render();
@@ -365,7 +365,7 @@ function renderGame() {
       </div>
 
       ${hintBtns}
-      ${missesHtml}
+      ${S.poolMsg ? `<div class="strikes-line" style="color:#ef4444">Not in the player pool — no strike</div>` : missesHtml}
 
       <div class="input-wrap">
         <input class="guess-input" id="gi" value="${S.guess.replace(/"/g, '&quot;')}"
@@ -511,7 +511,7 @@ function renderResults() {
   });
 
   document.getElementById('bag').addEventListener('click', () => {
-    S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, results: [], phase: 'rules' };
+    S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: [], score: 0, guess: '', suggs: [], flash: null, poolMsg: false, results: [], phase: 'rules' };
     render();
   });
 }
@@ -536,8 +536,18 @@ function submit(override) {
   const val = (override || S.guess).trim();
   if (!val) return;
   const p = players[S.round];
-  const correct = p.player_name.toLowerCase() === val.toLowerCase() ||
-    p.player_name.toLowerCase().includes(val.toLowerCase());
+  // Typo protection: names outside the player pool don't cost a strike.
+  const vl = val.toLowerCase();
+  const inPool = allNames.some(n => { const nl = n.toLowerCase(); return nl === vl || nl.includes(vl); });
+  if (!inPool) {
+    S.flash = 'wrong';
+    S.poolMsg = true;
+    render();
+    setTimeout(() => { S.flash = null; S.poolMsg = false; render(); }, 1100);
+    return;
+  }
+  const correct = p.player_name.toLowerCase() === vl ||
+    p.player_name.toLowerCase().includes(vl);
   S.suggs = [];
 
   if (correct) {
@@ -581,6 +591,7 @@ function advance() {
       S.jerRevealed = false;
       S.misses = [];
       S.guess = '';
+      S.poolMsg = false;
       S.phase = 'playing';
     }
     render();
