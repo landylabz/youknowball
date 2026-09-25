@@ -235,8 +235,8 @@ if (!YKB_IS_PREVIEW) await sb.from('daily_game_log').upsert({ day_number: dayNum
     console.error('Failed to load players:', err);
     dayPlayers = [];
   }
-  const hasSeenRules = localStorage.getItem('ykb_daily_rules');
-  state.phase = hasSeenRules ? "playing" : "rules";
+  // Rules never auto-popup: the game is immediately playable, rules are one tap away.
+  state.phase = "playing";
   render();
 }
 
@@ -244,47 +244,7 @@ function render() {
   const root = document.getElementById("root");
   const { idx, hints, guess, results, phase, flash, suggestions } = state;
 
-  if (phase === "rules") {
-    const modalRoot = document.getElementById("modal-root");
-    modalRoot.innerHTML = `
-      <div class="modal-overlay">
-        <div class="modal">
-          <div class="modal-pill"></div>
-          <div class="modal-eyebrow">How To Play</div>
-          <div class="modal-title">Daily Game.</div>
-          <div style="display:flex;flex-direction:column;gap:0">
-            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
-              <div style="font-size:20px;min-width:28px">\uD83C\uDFC8</div>
-              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">10 Players Daily</div>
-              <div style="font-size:12px;color:var(--ash);line-height:1.5">A new set of 10 NFL players every day at midnight. Guess which college they attended.</div></div>
-            </div>
-            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
-              <div style="font-size:20px;min-width:28px">\uD83D\uDFE5</div>
-              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">One Hint Available</div>
-              <div style="font-size:12px;color:var(--ash);line-height:1.5">Reveal the player's conference. Using it drops your tier for that player.</div></div>
-            </div>
-            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--slate)">
-              <div style="font-size:20px;min-width:28px">\uD83D\uDEAB</div>
-              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">3 Wrong = Fail</div>
-              <div style="font-size:12px;color:var(--ash);line-height:1.5">Three wrong guesses on one player and you automatically move on. That one is a loss.</div></div>
-            </div>
-            <div style="display:flex;gap:14px;align-items:flex-start;padding:14px 0">
-              <div style="font-size:20px;min-width:28px">ℹ️</div>
-              <div><div style="font-family:var(--font-h);font-size:14px;font-weight:900;text-transform:uppercase;color:var(--white);margin-bottom:3px">Tiers</div>
-              <div style="font-size:12px;color:var(--ash);line-height:1.5">🟩 Ball Knower &middot; \uD83D\uDFE6 Scholar (hint used) &middot; \uD83D\uDFE5 Wrong &middot; \uD83D\uDFEA Burned</div></div>
-            </div>
-          </div>
-          <button id="rulesStartBtn" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:16px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;margin-top:8px">Let's Go</button>
-        </div>
-      </div>`;
-    document.getElementById("rulesStartBtn").addEventListener("click", () => {
-      localStorage.setItem("ykb_daily_rules", "1");
-      modalRoot.innerHTML = "";
-      state.phase = "playing";
-      render();
-    });
-    return;
-  }
+
 
   if (phase === "loading") {
     root.innerHTML = `

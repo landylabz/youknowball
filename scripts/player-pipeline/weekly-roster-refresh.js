@@ -87,8 +87,13 @@ async function fetchCsv(url) {
       active: isActive,
       last_enriched_at: new Date().toISOString(),
     };
-    // Only update NFL team/jersey/division if not human-validated
-    if (!p.validated) {
+    // Team/jersey/division refresh for EVERYONE (validated or not): these are
+    // pipeline-owned facts from the league source. Human validation covers
+    // identity (name/college); a hand-corrected team in admin.html gets
+    // re-synced from the source on the next run by design.
+    // Only touch these when we matched a roster row: no match = no data,
+    // so preserve what's there instead of nulling it.
+    if (r) {
       nextFields.nfl_team = teamInfo?.name || (isActive ? teamAbbr : null);
       nextFields.nfl_conference = teamInfo?.conference || null;
       nextFields.nfl_division = teamInfo?.division || null;
@@ -99,8 +104,10 @@ async function fetchCsv(url) {
     if (r?.pfr_id && !p.pfr_id) nextFields.pfr_id = r.pfr_id;
     if (r?.gsis_id && !p.gsis_id) nextFields.gsis_id = r.gsis_id;
 
-    // Skip no-op updates
-    if (nextFields.active === p.active && !nextFields.pfr_id && !nextFields.gsis_id) {
+    // Skip no-op updates (compare team/jersey too, not just active status)
+    const teamChanged = !!r && (nextFields.nfl_team || null) !== (p.nfl_team || null);
+    const jerseyChanged = !!r && (nextFields.jersey_number || null) !== (p.jersey_number || null);
+    if (nextFields.active === p.active && !teamChanged && !jerseyChanged && !nextFields.pfr_id && !nextFields.gsis_id) {
       unchanged++; continue;
     }
 
