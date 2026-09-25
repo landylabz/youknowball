@@ -27,7 +27,6 @@
     .pill-streak{background:var(--dark);border:1px solid var(--slate);color:#ff9633}
     .rules-btn{background:rgba(255,255,255,.08);border:none;border-radius:50%;width:30px;height:30px;font-size:13px;font-weight:700;color:var(--white);cursor:pointer}
     /* ── game section ── */
-    .game-kicker{padding:26px 20px 14px;font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--red)}
     .progress{background:var(--dark);padding:10px 20px;display:flex;gap:5px;border-bottom:1px solid var(--slate)}
     .pip{flex:1;height:4px;border-radius:2px;background:var(--slate);transition:background .4s}
     .pip.correct{background:#22c55e} .pip.wrong{background:#ef4444} .pip.current{background:rgba(255,18,0,.35)}
@@ -164,9 +163,10 @@
   </header>
 
   <section id="home-game">
-    <div class="game-kicker">Today's 10 &nbsp;&middot;&nbsp; Guess the college</div>
     <div id="game-root"></div>
   </section>
+
+  <div class="how-link"><button id="howLink">How to play <span>&rarr;</span></button></div>
 
   <section class="home-section" id="moreGames">
     <div class="section-kicker">More games</div>
@@ -194,8 +194,6 @@
       </a>
     </div>
   </section>
-
-  <div class="how-link"><button id="howLink">How it plays <span>&rarr;</span></button></div>
 
   <footer>
     <div class="footer-wm">YOUKNOWBALL.</div>
