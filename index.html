@@ -302,29 +302,40 @@ async function init() {
   try {
     const { data, error } = await sb
       .from('players')
-      .select('name, college, position, nfl_team, conference, difficulty_tier, rating, jersey_number, draft_round, state').eq('validated', true);
+      .select('name, college, position, nfl_team, conference, difficulty_tier, rating, jersey_number, draft_round, state').eq('validated', true).order('name');
     if (error) throw error;
     // Suggestion pool = validated players’ schools (the true answer set, split on ";" for transfers)
     // unioned with the curated fallback list. (A separate unfiltered college query was dropped:
     // Supabase caps it at 1000 rows, silently omitting schools.)
     const dbSchools = data.flatMap(p => (p.college || "").split(";").map(c => c.trim())).filter(Boolean);
     COLLEGES = [...new Set([...COLLEGES, ...dbSchools])].sort();
-    const { data: logData } = await sb.from('daily_game_log').select('player_names').gte('day_number', dayNum - 14);
-    const recentlyUsed = new Set((logData || []).flatMap(row => row.player_names || []));
-    const eligible = data.filter(p => !recentlyUsed.has(p.name));
-    const t1 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T1'), daySeed);
-    const t2 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T2'), daySeed + 1);
-    const t3 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T3'), daySeed + 2);
-    const pool = [...t1.slice(0,3), ...t2.slice(0,4), ...t3.slice(0,3)];
-    if (pool.length < 10) {
-      const all = seededShuffle(data, daySeed);
-      for (const p of all) {
-        if (!pool.find(x => x.name === p.name)) pool.push(p);
-        if (pool.length >= 10) break;
-      }
+    const { data: logData } = await sb.from('daily_game_log').select('day_number, player_names').gte('day_number', dayNum - 14);
+    // Today's pool is fixed once chosen: on later visits reuse the logged pool in
+    // order. (Re-picking every load excluded today's own log row and churned the pool.)
+    const todayRow = (logData || []).find(r => r.day_number === dayNum);
+    const loggedNames = (todayRow && todayRow.player_names) || [];
+    if (loggedNames.length === PLAYERS_PER_DAY) {
+      const byName = new Map(data.map(p => [p.name, p]));
+      const reused = loggedNames.map(n => byName.get(n)).filter(Boolean);
+      if (reused.length === PLAYERS_PER_DAY) dayPlayers = reused;
     }
-    dayPlayers = pool.slice(0, 10);
-    if (!YKB_IS_PREVIEW) await sb.from('daily_game_log').upsert({ day_number: dayNum, game_date: new Date().toISOString().split('T')[0], player_names: dayPlayers.map(p => p.name) }, { onConflict: 'day_number' });
+    if (dayPlayers.length !== PLAYERS_PER_DAY) {
+      const recentlyUsed = new Set((logData || []).filter(r => r.day_number !== dayNum).flatMap(row => row.player_names || []));
+      const eligible = data.filter(p => !recentlyUsed.has(p.name));
+      const t1 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T1'), daySeed);
+      const t2 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T2'), daySeed + 1);
+      const t3 = seededShuffle(eligible.filter(p => p.difficulty_tier === 'T3'), daySeed + 2);
+      const pool = [...t1.slice(0,3), ...t2.slice(0,4), ...t3.slice(0,3)];
+      if (pool.length < 10) {
+        const all = seededShuffle(data, daySeed);
+        for (const p of all) {
+          if (!pool.find(x => x.name === p.name)) pool.push(p);
+          if (pool.length >= 10) break;
+        }
+      }
+      dayPlayers = pool.slice(0, 10);
+      if (!YKB_IS_PREVIEW) await sb.from('daily_game_log').upsert({ day_number: dayNum, game_date: new Date().toISOString().split('T')[0], player_names: dayPlayers.map(p => p.name) }, { onConflict: 'day_number' });
+    }
   } catch(err) {
     console.error('Failed to load players:', err);
     dayPlayers = [];
