@@ -196,7 +196,7 @@ let S = { round: 0, hints: 0, posRevealed: false, jerRevealed: false, misses: []
 async function init() {
   render();
   try {
-    const { data, error } = await sb.from('player_teams').select('*').eq('eligible', true).eq('verified', true);
+    const { data, error } = await sb.from('player_teams').select('*').eq('eligible', true).eq('verified', true).order('player_name');
     if (error) throw error;
     if (!data || data.length < ROUNDS) { showErr('Not enough players yet — check back soon!'); return; }
 
