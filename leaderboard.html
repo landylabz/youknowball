@@ -236,6 +236,9 @@
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
   );
 
+  /* Page-view log (production only; silently no-ops until the page_views table exists) */
+  try { if (!/\.vercel\.app$/.test(location.hostname)) sb.from('page_views').insert({ page: location.pathname, referrer: document.referrer || null }).then(function(){}, function(){}); } catch (e) {}
+
   function getDayNum() {
     return Math.floor((new Date() - new Date("2026-03-02")) / 86400000) + 1;
   }
