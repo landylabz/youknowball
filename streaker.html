@@ -185,8 +185,20 @@ const sb = createClient(
   'https://qoxgmscwbtdcvztksjtx.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFveGdtc2N3YnRkY3Z6dGtzanR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxNTM5NTIsImV4cCI6MjA4NzcyOTk1Mn0.T0sIoWSSvVOG9Y0qnTdsK49gTOB9ffMeCFA4NWEqeXI'
 );
-/* Page-view log (production only; silently no-ops until the page_views table exists) */
-try { if (!/\.vercel\.app$/.test(location.hostname)) sb.from('page_views').insert({ page: location.pathname, referrer: document.referrer || null }).then(function(){}, function(){}); } catch (e) {}
+/* Page-view log (production only) + anonymous visitor/session IDs for unique-visitor counts. IDs are random strings in local/session storage — no PII. Falls back to the old payload until the table has visitor_id/session_id columns. */
+try {
+  var __ykb_vid = null, __ykb_sid = null;
+  try { __ykb_vid = localStorage.getItem('ykb_vid') || (function(){ var v = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem('ykb_vid', v); return v; })(); } catch (e1) {}
+  try { __ykb_sid = sessionStorage.getItem('ykb_sid') || (function(){ var v = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('ykb_sid', v); return v; })(); } catch (e2) {}
+} catch (e) {}
+try {
+  if (!/\.vercel\.app$/.test(location.hostname)) {
+    var __pv = { page: location.pathname, referrer: document.referrer || null, visitor_id: __ykb_vid, session_id: __ykb_sid };
+    sb.from('page_views').insert(__pv).then(function(){}, function(){
+      sb.from('page_views').insert({ page: __pv.page, referrer: __pv.referrer }).then(function(){}, function(){});
+    });
+  }
+} catch (e3) {}
 
 // Preview deployments (Vercel *.vercel.app) are for UI review only: never write to the DB from them.
 const YKB_IS_PREVIEW = /\.vercel\.app$/.test(location.hostname);
