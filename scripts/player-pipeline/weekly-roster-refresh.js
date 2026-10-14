@@ -2,7 +2,8 @@
 // weekly-roster-refresh.js
 // Runs weekly (GitHub Actions cron).
 // Updates ONLY: active status, nfl_team, nfl_conference, nfl_division,
-// jersey_number — for players already in the DB.
+// jersey_number (active players only — retired players' numbers are
+// hand-curated and must never be nulled by the sync).
 //
 // Never inserts new rows. Never touches validated=true rows' bio.
 // ============================================================
@@ -48,12 +49,14 @@ async function fetchCsv(url) {
   }
   console.log(`   Loaded ${roster.length.toLocaleString()} roster rows\n`);
 
-  // Build lookup by pfr_id + gsis_id + full_name
+  // Build lookup by pfr_id + gsis_id + full_name (period-insensitive so
+  // "A.J. Brown" matches nflverse's "AJ Brown")
+  const normName = s => (s || '').trim().toLowerCase().replace(/\./g, '');
   const byPfr = new Map(), byGsis = new Map(), byName = new Map();
   for (const r of roster) {
     if (r.pfr_id) byPfr.set(r.pfr_id, r);
     if (r.gsis_id) byGsis.set(r.gsis_id, r);
-    const nm = (r.full_name || r.player_name || '').trim().toLowerCase();
+    const nm = normName(r.full_name || r.player_name);
     if (nm) byName.set(nm, r);
   }
 
@@ -76,7 +79,7 @@ async function fetchCsv(url) {
   for (const p of existing) {
     const r = (p.pfr_id && byPfr.get(p.pfr_id))
       || (p.gsis_id && byGsis.get(p.gsis_id))
-      || byName.get(p.name.toLowerCase());
+      || byName.get(normName(p.name));
 
     const status = String(r?.status || '').toUpperCase();
     const isActive = !!r && (status.includes('ACT') || status === 'A01');
@@ -97,7 +100,11 @@ async function fetchCsv(url) {
       nextFields.nfl_team = teamInfo?.name || (isActive ? teamAbbr : null);
       nextFields.nfl_conference = teamInfo?.conference || null;
       nextFields.nfl_division = teamInfo?.division || null;
-      nextFields.jersey_number = (isActive && r?.jersey_number) ? (Number(r.jersey_number) || null) : null;
+      // Only sync jersey for active players. Retired players' numbers are
+      // hand-curated (primary-team number) and must never be nulled by the sync.
+      if (isActive && r?.jersey_number) {
+        nextFields.jersey_number = Number(r.jersey_number) || null;
+      }
     }
 
     // Backfill pfr_id / gsis_id if we matched via name
@@ -106,7 +113,7 @@ async function fetchCsv(url) {
 
     // Skip no-op updates (compare team/jersey too, not just active status)
     const teamChanged = !!r && (nextFields.nfl_team || null) !== (p.nfl_team || null);
-    const jerseyChanged = !!r && (nextFields.jersey_number || null) !== (p.jersey_number || null);
+    const jerseyChanged = ('jersey_number' in nextFields) && (nextFields.jersey_number || null) !== (p.jersey_number || null);
     if (nextFields.active === p.active && !teamChanged && !jerseyChanged && !nextFields.pfr_id && !nextFields.gsis_id) {
       unchanged++; continue;
     }
