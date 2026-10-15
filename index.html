@@ -250,6 +250,36 @@ const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorad
 
 let COLLEGES = ["Alabama","Arizona","Arizona State","Arkansas","Auburn","Baylor","Boston College","BYU","California","Cincinnati","Clemson","Colorado","Duke","Eastern Michigan","Eastern Washington","Florida","Florida State","Fresno State","Georgia","Georgia Tech","Houston","Illinois","Indiana","Iowa","Iowa State","Kansas","Kansas State","Kentucky","LSU","Louisville","Maryland","Memphis","Miami","Michigan","Michigan State","Minnesota","Mississippi State","Missouri","Nebraska","North Carolina","North Carolina State","Northwestern","Notre Dame","Ohio","Ohio State","Oklahoma","Oklahoma State","Ole Miss","Oregon","Oregon State","Penn State","Pittsburgh","Purdue","Rutgers","SMU","South Carolina","South Dakota State","Stanford","Syracuse","TCU","Temple","Tennessee","Texas","Texas A&M","Texas Tech","Toledo","UCLA","USC","Utah","Utah State","Vanderbilt","Virginia","Virginia Tech","Wake Forest","Washington","Washington State","West Alabama","West Virginia","Western Colorado","Wisconsin","Wyoming","UTEP","Minnesota","Grand Valley State","Arkansas State","BYU"];
 
+// Common abbreviations -> full school names for generous answer matching
+const SCHOOL_ALIASES = {
+  "lsu": ["louisiana state"],
+  "osu": ["ohio state", "oklahoma state", "oregon state"],
+  "psu": ["penn state"],
+  "unc": ["north carolina"],
+  "uva": ["virginia"],
+  "vt": ["virginia tech"],
+  "wvu": ["west virginia"],
+  "ku": ["kansas"],
+  "ksu": ["kansas state"],
+  "tamu": ["texas a&m"], "a&m": ["texas a&m"],
+  "smu": ["southern methodist"],
+  "tcu": ["texas christian"],
+  "fsu": ["florida state"],
+  "msu": ["michigan state", "mississippi state"],
+  "asu": ["arizona state", "appalachian state", "alabama state"]
+};
+function collegeMatches(college, val) {
+  const schools = (college || "").toLowerCase().split(";").map(s => s.trim()).filter(Boolean);
+  const candidates = [val, ...(SCHOOL_ALIASES[val] || [])];
+  for (const abbr in SCHOOL_ALIASES) {
+    if (SCHOOL_ALIASES[abbr].includes(val)) candidates.push(abbr);
+  }
+  return schools.some(s => candidates.some(v =>
+    s === v || s.includes(v) || v.includes(s.split(" ")[0])
+  ));
+}
+
+
 const TIERS = [
   { emoji:"🟩",       name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
   { emoji:"🟦", name:"SCHOLAR", color:"#3b82f6", match:(h,c)=> c && h>=1  },
@@ -528,9 +558,7 @@ function submitGuess(override) {
   const val = (override || state.guess).trim().toLowerCase();
   if (!val) return;
   const player = dayPlayers[state.idx];
-  const correct = player.college.toLowerCase() === val ||
-    player.college.toLowerCase().includes(val) ||
-    val.includes(player.college.toLowerCase().split(" ")[0]);
+  const correct = collegeMatches(player.college, val);
   state.suggestions = [];
   if (correct) {
     const tier = getTier(state.hints, true);
