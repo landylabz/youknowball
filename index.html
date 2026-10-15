@@ -688,7 +688,7 @@ function shareText() {
   const correct = state.results.filter(r => r.correct).length;
   const overall = getOverallTier(correct, PLAYERS_PER_DAY, state.results);
   const grid = state.results.map(r => r.tier.emoji);
-  return `YouKnowBall #${dayNum} \u00b7 ${correct}/${PLAYERS_PER_DAY}\n\n${grid.slice(0, 5).join("")}\n${grid.slice(5, 10).join("")}\n\nyouknowball.io`;
+  return `YouKnowBall #${dayNum} \u00b7 ${correct}/${PLAYERS_PER_DAY}\n\n${grid.slice(0, 5).join("")}\n${grid.slice(5, 10).join("")}\n\n${overall.name} \u00b7 youknowball.io`;
 }
 
 async function handleShare() {
