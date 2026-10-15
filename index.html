@@ -105,7 +105,7 @@
     .result-tier-badge{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:right}
     .rank-teaser{margin:14px 0 4px}
     .rank-loading{text-align:center;color:#555;font-size:11px;letter-spacing:3px;text-transform:uppercase}
-    .btn-rank{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#161616;border:1.5px solid var(--red);border-radius:12px;padding:16px;font-family:var(--font-d);font-size:15px;letter-spacing:2px;color:var(--white);text-decoration:none;text-transform:uppercase}
+    .btn-rank{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#161616;border:1.5px solid var(--red);border-radius:12px;padding:16px;font-family:var(--font-d);font-size:15px;letter-spacing:2px;color:var(--white);text-transform:uppercase;cursor:pointer;-webkit-appearance:none;appearance:none}
     .btn-rank b{color:var(--red);font-size:22px}
     .board-line{margin:10px 0 2px;text-align:center;font-size:12px;letter-spacing:1px;color:#777}
     .board-line b{color:#ddd}
@@ -334,17 +334,20 @@ async function autoSubmitScore(correct, overall) {
 async function loadRankTeaser(correct) {
   const el = document.getElementById("rankTeaser");
   if (!el) return;
+  const go = () => { window.location.href = "/leaderboard.html#daily"; };
   try {
     const { data, error } = await sb.from("game_scores")
       .select("score").eq("day_number", dayNum).is("game_type", null).limit(5000);
     if (error) throw error;
     const scores = (data || []).map(r => r.score);
-    scores.push(correct); // include this run (covers previews, where writes are skipped)
+    if (YKB_IS_PREVIEW) scores.push(correct); // previews skip writes
     const rank = 1 + scores.filter(s => s > correct).length;
     const total = scores.length;
-    el.innerHTML = `<a class="btn-rank" href="/leaderboard.html#daily">You're <b>#${rank}</b> of ${total} today <span>→</span></a>`;
+    el.innerHTML = `<button class="btn-rank" id="rankBtn">You're <b>#${rank}</b> of ${total} today <span>→</span></button>`;
+    document.getElementById("rankBtn").addEventListener("click", go);
   } catch (e) {
-    el.innerHTML = `<a class="btn-rank" href="/leaderboard.html#daily">View today's leaderboard <span>→</span></a>`;
+    el.innerHTML = `<button class="btn-rank" id="rankBtn">View today's leaderboard <span>→</span></button>`;
+    document.getElementById("rankBtn").addEventListener("click", go);
   }
 }
 
@@ -672,13 +675,13 @@ function submitGuess(override) {
   }
 }
 
-function finishGame() {
+async function finishGame() {
   bumpStreak();
   renderHeader();
   state.phase = "results";
-  render();
   const correct = state.results.filter(r => r.correct).length;
-  autoSubmitScore(correct, getOverallTier(correct, PLAYERS_PER_DAY, state.results));
+  await autoSubmitScore(correct, getOverallTier(correct, PLAYERS_PER_DAY, state.results));
+  render();
 }
 
 function shareText() {
