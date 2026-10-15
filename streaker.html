@@ -173,9 +173,24 @@
     .upnext-title{font-family:var(--font-d);font-size:17px;letter-spacing:1px;color:var(--white);line-height:1}
     .upnext-hook{font-size:12px;color:var(--ash);margin-top:3px;line-height:1.45}
     .upnext-play{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--red);white-space:nowrap}
+    .site-header{background:rgba(10,10,10,.96);backdrop-filter:blur(8px);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--slate)}
+    .wordmark{font-family:var(--font-d);font-size:26px;letter-spacing:2px;color:var(--white);line-height:1;text-decoration:none}
+    .header-right{display:flex;align-items:center;gap:8px}
+    .pill{border-radius:999px;padding:8px 14px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+    .pill-day{background:var(--red);color:var(--white)}
+    .pill-streak{background:var(--dark);border:1px solid var(--slate);color:#ff9633}
+    .rules-btn{background:rgba(255,255,255,.08);border:none;border-radius:50%;width:30px;height:30px;font-size:13px;font-weight:700;color:var(--white);cursor:pointer}
 </style>
 </head>
 <body>
+<header class="site-header">
+  <a href="/" class="wordmark">YOUKNOWBALL.</a>
+  <div class="header-right">
+    <div class="pill pill-day" id="dayPill">DAY #&ndash;</div>
+    <div class="pill pill-streak" id="streakPill" style="display:none"></div>
+    <button class="rules-btn" id="rulesBtn" aria-label="How to play">?</button>
+  </div>
+</header>
 <div id="root"></div>
 <div id="overlay-root"></div>
 
@@ -284,6 +299,16 @@ let state = {
 
 // ── INIT ──────────────────────────────────────────────────
 async function init() {
+
+/* Standard YKB banner: day pill + streak pill ("N Day Streak") */
+function ykbDayNum(){return Math.floor((new Date()-new Date("2026-03-02"))/86400000)+1;}
+function ykbGetStreak(){try{return JSON.parse(localStorage.getItem('ykb_streak')||'{"count":0,"lastDay":0}');}catch(e){return{count:0,lastDay:0};}}
+function ykbRenderBanner(){
+  var dp=document.getElementById('dayPill'); if(dp) dp.textContent='DAY #'+ykbDayNum();
+  var s=ykbGetStreak(), pill=document.getElementById('streakPill');
+  if(pill){ if(s.count>0){pill.style.display=''; pill.textContent=s.count+' Day Streak';} else {pill.style.display='none';} }
+}
+
   try {
     const { data, error } = await sb
       .from('players')
@@ -301,6 +326,12 @@ async function init() {
   const hasSeenRules = localStorage.getItem('ykb_streaker_rules');
   state.phase = hasSeenRules ? 'playing' : 'rules';
   if (state.phase === 'playing') startRound();
+  ykbRenderBanner();
+  document.getElementById('rulesBtn')?.addEventListener('click', () => {
+    state.phase = 'rules';
+    clearInterval(timerInterval);
+    render();
+  });
   render();
 }
 
@@ -446,10 +477,6 @@ function render() {
     clearInterval(timerInterval);
     const footballs = Array(state.streak).fill('\uD83C\uDFC8').join('');
     root.innerHTML = `
-      <header class="header">
-        <a href="/" class="wordmark">YOUKNOWBALL.</a>
-        <div class="header-mode">STREAKER</div>
-      </header>
       <div class="gameover">
         <div class="gameover-hero">
           <div class="gameover-label">Streak Ended</div>
@@ -520,13 +547,6 @@ function render() {
     const timerCls = state.timeLeft <= 10 ? 'danger' : state.timeLeft <= 20 ? 'warning' : '';
 
     root.innerHTML = `
-      <header class="header">
-        <a href="/" class="wordmark">YOUKNOWBALL.</a>
-        <div class="header-right">
-          <div class="header-mode">STREAKER</div>
-          <button class="btn-rules" id="rulesBtn">?</button>
-        </div>
-      </header>
       <div class="timer-wrap">
         <div class="timer-bar ${timerCls}" id="timerBar" style="width:${pct}%"></div>
         <div class="timer-label">
@@ -578,11 +598,6 @@ function render() {
         </div>
       </div>`;
 
-    document.getElementById('rulesBtn')?.addEventListener('click', () => {
-      state.phase = 'rules';
-      clearInterval(timerInterval);
-      render();
-    });
     document.getElementById('hintBtn')?.addEventListener('click', useHint);
     document.getElementById('submitBtn')?.addEventListener('click', () => submitGuess());
 

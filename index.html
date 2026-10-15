@@ -416,7 +416,7 @@ function renderHeader() {
   document.getElementById('dayPill').textContent = 'DAY #' + dayNum;
   const s = getStreak();
   const pill = document.getElementById('streakPill');
-  if (s.count > 0) { pill.style.display = ''; pill.textContent = s.count + ' STREAK'; }
+  if (s.count > 0) { pill.style.display = ''; pill.textContent = s.count + ' Day Streak'; }
   else { pill.style.display = 'none'; }
 }
 
