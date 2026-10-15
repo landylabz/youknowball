@@ -103,6 +103,8 @@
     .result-name{font-family:var(--font-h);font-size:15px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px}
     .result-college{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-top:2px}
     .result-tier-badge{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:right}
+    .board-line{margin:10px 0 2px;text-align:center;font-size:12px;letter-spacing:1px;color:#777}
+    .board-line b{color:#ddd}
     .btn-share{width:100%;background:var(--red);border:none;border-radius:12px;padding:18px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;text-transform:uppercase;color:var(--white);cursor:pointer;transition:all .15s}
     .btn-share:hover{background:#e01000;transform:translateY(-1px)}
     .midnight-note{text-align:center;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#333;padding-bottom:20px}
@@ -277,6 +279,52 @@ function collegeMatches(college, val) {
   return schools.some(s => candidates.some(v =>
     s === v || s.includes(v) || v.includes(s.split(" ")[0])
   ));
+}
+
+// Anonymous player identity: auto-generated handle, no login required.
+// Every finished daily game auto-posts to the leaderboard under this handle.
+const HANDLE_ADJ = ["Sneaky","Crafty","Clutch","Rowdy","Silent","Wild","Bold","Swift","Gritty","Shifty","Icy","Feral","Slick","Noisy","Calm"];
+const HANDLE_POS = ["Safety","Linebacker","Corner","Quarterback","Receiver","Tackle","Guard","Center","End","Back"];
+function generateHandle() {
+  const a = HANDLE_ADJ[Math.floor(Math.random() * HANDLE_ADJ.length)];
+  const p = HANDLE_POS[Math.floor(Math.random() * HANDLE_POS.length)];
+  const n = Math.floor(1000 + Math.random() * 9000);
+  return `${a} ${p} #${n}`;
+}
+function getPlayerIdentity() {
+  let uid = null, handle = null;
+  try {
+    uid = localStorage.getItem("ykb_uid");
+    handle = localStorage.getItem("ykb_handle");
+    if (!uid) { uid = "u_" + Math.random().toString(36).slice(2, 12); localStorage.setItem("ykb_uid", uid); }
+    if (!handle) { handle = generateHandle(); localStorage.setItem("ykb_handle", handle); }
+  } catch (e) { handle = handle || generateHandle(); }
+  return { uid, handle };
+}
+function renameHandle() {
+  const cur = getPlayerIdentity().handle;
+  const next = prompt("Your leaderboard name:", cur);
+  if (next && next.trim()) {
+    const clean = next.trim().slice(0, 24);
+    try { localStorage.setItem("ykb_handle", clean); } catch (e) {}
+    render();
+  }
+}
+async function autoSubmitScore(correct, overall) {
+  const today = new Date().toISOString().split("T")[0];
+  let submitted = false;
+  try { submitted = localStorage.getItem("ykb_submitted") === today; } catch (e) {}
+  if (submitted || YKB_IS_PREVIEW) return;
+  const { handle } = getPlayerIdentity();
+  const emojis = state.results.map(r => r.tier.emoji).join("");
+  try {
+    const { error } = await sb.from("game_scores").insert({
+      initials: handle, state: null, score: correct,
+      tier: overall.name, day_number: dayNum, game_date: today, emoji_string: emojis
+    });
+    if (error) throw error;
+    try { localStorage.setItem("ykb_submitted", today); } catch (e) {}
+  } catch (e) { /* leaderboard is best-effort; the game result stands */ }
 }
 
 
@@ -461,6 +509,7 @@ function render() {
             </div>`).join("")}
         </div>
         <button class="btn-share" id="shareBtn">Share Results</button>
+        <div class="board-line">On the leaderboard as <b>${getPlayerIdentity().handle}</b> · <span id="renameHandle" style="text-decoration:underline;cursor:pointer">rename</span></div>
         <div class="upnext">
           <div class="upnext-kicker">Up next</div>
           <a class="upnext-card" href="/streaker.html">
@@ -488,6 +537,7 @@ function render() {
         <div class="midnight-note">New players every day at midnight</div>
       </div>`;
     document.getElementById("shareBtn").addEventListener("click", handleShare);
+    document.getElementById("renameHandle")?.addEventListener("click", renameHandle);
     return;
   }
 
@@ -605,19 +655,7 @@ function finishGame() {
   state.phase = "results";
   render();
   const correct = state.results.filter(r => r.correct).length;
-  showModal(correct, getOverallTier(correct, PLAYERS_PER_DAY, state.results));
-}
-
-function skipPlayer() {
-  const player = dayPlayers[state.idx];
-  const tier = getTier(state.hints, false);
-  state.results.push({ player, correct: false, hintsUsed: state.hints, tier });
-  state.suggestions = [];
-  if (state.idx + 1 >= PLAYERS_PER_DAY) { finishGame(); }
-  else {
-    state.phase = "between"; render();
-    setTimeout(() => { state.idx++; state.hints = 0; state.guess = ""; state.phase = "playing"; render(); }, 2200);
-  }
+  autoSubmitScore(correct, getOverallTier(correct, PLAYERS_PER_DAY, state.results));
 }
 
 function shareText() {
@@ -640,92 +678,6 @@ async function handleShare() {
     } catch (e2) { /* clipboard unavailable */ }
   }
 }
-function showModal(correct, overall) {
-  const today = new Date().toISOString().split('T')[0];
-  if (localStorage.getItem('ykb_submitted') === today) return;
-  const modalRoot = document.getElementById('modal-root');
-  modalRoot.innerHTML = `
-    <div class="modal-overlay" id="modalOverlay">
-      <div class="modal">
-        <div class="modal-pill"></div>
-        <div class="modal-eyebrow">Post Your Score</div>
-        <div class="modal-title">Hit The Board.</div>
-        <div class="modal-sub">Enter your initials and state to appear on the YouKnowBall leaderboard.</div>
-        <div class="modal-field">
-          <div class="modal-field-label">Your Initials</div>
-          <input class="modal-initials" id="modalInitials" maxlength="3" placeholder="YKB" autocomplete="off"/>
-        </div>
-        <div class="modal-field">
-          <div class="modal-field-label">Your State</div>
-          <div style="position:relative">
-            <input class="modal-select" id="modalState" placeholder="Start typing your state..." autocomplete="off"/>
-            <div class="suggestions" id="modalStateSugs" style="display:none"></div>
-          </div>
-        </div>
-        <button class="btn-modal-submit" id="modalSubmit" disabled>Submit Score</button>
-        <button class="btn-modal-skip" id="modalSkip">Skip — maybe next time</button>
-      </div>
-    </div>`;
-  const inp = document.getElementById('modalInitials');
-  const stateInp = document.getElementById('modalState');
-  const stateSugs = document.getElementById('modalStateSugs');
-  const btn = document.getElementById('modalSubmit');
-  const canonicalState = () => US_STATES.find(s => s.toLowerCase() === stateInp.value.trim().toLowerCase());
-  function checkReady() { btn.disabled = inp.value.trim().length < 2 || !canonicalState(); }
-  function renderStateSugs() {
-    const q = stateInp.value.trim().toLowerCase();
-    const matches = (q && !canonicalState()) ? US_STATES.filter(s => s.toLowerCase().includes(q)).slice(0, 6) : [];
-    if (!matches.length) { stateSugs.style.display = 'none'; stateSugs.innerHTML = ''; return; }
-    stateSugs.innerHTML = matches.map(s => `<div class="suggestion" data-s="${s}">${s}</div>`).join('');
-    stateSugs.style.display = '';
-    stateSugs.querySelectorAll('.suggestion').forEach(el => {
-      el.addEventListener('click', () => { stateInp.value = el.dataset.s; stateSugs.style.display = 'none'; checkReady(); });
-    });
-  }
-  inp.addEventListener('input', checkReady);
-  stateInp.addEventListener('input', () => { renderStateSugs(); checkReady(); });
-  stateInp.addEventListener('focus', renderStateSugs);
-  stateInp.addEventListener('blur', () => setTimeout(() => { stateSugs.style.display = 'none'; }, 150));
-  btn.addEventListener('click', async () => {
-    const initials = inp.value.trim().toUpperCase();
-    const userState = canonicalState();
-    btn.disabled = true; btn.textContent = 'Posting...';
-    await submitScore(initials, userState, correct, overall);
-  });
-  document.getElementById('modalSkip').addEventListener('click', () => { modalRoot.innerHTML = ''; });
-  document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target.id === 'modalOverlay') modalRoot.innerHTML = ''; });
-}
-
-async function submitScore(initials, userState, correct, overall) {
-  const today = new Date().toISOString().split('T')[0];
-  const emojis = state.results.map(r => r.tier.emoji).join('');
-  try {
-    const { error } = YKB_IS_PREVIEW ? {} : await sb.from('game_scores').insert({
-      initials, state: userState, score: correct,
-      tier: overall.name, day_number: dayNum, game_date: today, emoji_string: emojis
-    });
-    if (error) throw error;
-    if (!YKB_IS_PREVIEW) localStorage.setItem('ykb_submitted', today);
-    document.getElementById('modal-root').innerHTML = `
-      <div class="modal-overlay">
-        <div class="modal">
-          <div class="modal-pill"></div>
-          <div class="modal-success">
-            <div class="modal-success-emoji">🟩</div>
-            <div class="modal-success-title">You're On The Board.</div>
-            <div class="modal-success-sub">${initials} · ${userState}<br>${YKB_IS_PREVIEW ? 'Preview build — score not posted.' : 'Score posted to the leaderboard.'}</div>
-            <a href="/leaderboard.html#daily" style="margin-top:8px;background:var(--red);color:var(--white);font-family:var(--font-d);font-size:18px;letter-spacing:3px;padding:14px 32px;border-radius:10px;text-decoration:none;display:inline-block">View Leaderboard</a>
-            <button onclick="document.getElementById('modal-root').innerHTML=''" style="background:transparent;border:none;color:#444;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:-8px">Close</button>
-          </div>
-        </div>
-      </div>`;
-  } catch(err) {
-    console.error('Supabase error:', err);
-    document.getElementById('modalSubmit').textContent = 'Error — Try Again';
-    document.getElementById('modalSubmit').disabled = false;
-  }
-}
-
 function showRules() {
   const modalRoot = document.getElementById('modal-root');
   modalRoot.innerHTML = `
