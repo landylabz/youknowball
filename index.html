@@ -76,8 +76,8 @@
     .actions{display:flex;gap:10px}
     .btn-submit{flex:1;background:var(--red);border:none;border-radius:12px;padding:14px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;color:var(--white);cursor:pointer;transition:all .2s}
     .btn-submit:hover{background:#CC0E00;transform:translateY(-1px)}
-    .btn-claudio{width:100%;background:transparent;border:1.5px solid #333;border-radius:12px;padding:9px;font-family:var(--font-d);font-size:12px;letter-spacing:3px;color:#555;cursor:pointer;transition:all .2s;margin-top:4px}
-    .btn-claudio:hover{border-color:#FF1200;color:#FF1200}
+    .btn-skip{width:100%;background:transparent;border:1.5px solid #333;border-radius:12px;padding:9px;font-family:var(--font-d);font-size:12px;letter-spacing:3px;color:#555;cursor:pointer;transition:all .2s;margin-top:4px}
+    .btn-skip:hover{border-color:#FF1200;color:#FF1200}
     .between{display:flex;flex-direction:column;align-items:center;padding:40px 20px;gap:20px;animation:fadeUp .4s ease both;flex:1}
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     .between-card{width:100%;background:var(--dark);border:1px solid var(--slate);border-radius:20px;padding:36px 28px;display:flex;flex-direction:column;align-items:center;gap:10px}
@@ -531,7 +531,7 @@ function render() {
       <div class="actions">
         <button class="btn-submit" id="submitBtn">Submit</button>
       </div>
-      <button class="btn-claudio" id="claudioBtn">Claudio's Mercy Button</button>
+      <button class="btn-skip" id="skipBtn">Skip</button>
     </div>`;
 
   const input = document.getElementById("guessInput");
@@ -542,7 +542,7 @@ function render() {
     input.addEventListener("keydown", e => { if (e.key === "Enter") submitGuess(); });
   }
   document.getElementById("submitBtn")?.addEventListener("click", submitGuess);
-  document.getElementById("claudioBtn")?.addEventListener("click", claudioSkip);
+  document.getElementById("skipBtn")?.addEventListener("click", skipPlayer);
   document.getElementById("hintBtn")?.addEventListener("click", () => { if (state.hints < 1) { state.hints++; render(); } });
   document.querySelectorAll(".suggestion").forEach(el => {
     el.addEventListener("mousedown", e => {
@@ -772,7 +772,7 @@ function showRules() {
   });
 }
 
-function claudioSkip() {
+function skipPlayer() {
   if (state.phase !== 'playing') return;
   const player = dayPlayers[state.idx];
   const tier = getTier(state.hints, false);
