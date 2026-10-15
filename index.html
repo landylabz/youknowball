@@ -519,6 +519,8 @@ function render() {
           <div class="emoji-strip">${results.map(r => `<span>${r.tier.emoji}</span>`).join("")}</div>
           <div class="rank-teaser" id="rankTeaser"><div class="rank-loading">Checking your rank…</div></div>
         </div>
+        <button class="btn-share" id="shareBtn">Share Results</button>
+        <div class="board-line">On the leaderboard as <b>${getPlayerIdentity().handle}</b> · <span id="renameHandle" style="text-decoration:underline;cursor:pointer">rename</span></div>
         <div class="result-list">
           ${results.map(r => `
             <div class="result-row">
@@ -530,8 +532,6 @@ function render() {
               <div class="result-tier-badge" style="color:${r.tier.color}">${r.tier.name}</div>
             </div>`).join("")}
         </div>
-        <button class="btn-share" id="shareBtn">Share Results</button>
-        <div class="board-line">On the leaderboard as <b>${getPlayerIdentity().handle}</b> · <span id="renameHandle" style="text-decoration:underline;cursor:pointer">rename</span></div>
         <div class="upnext">
           <div class="upnext-kicker">Up next</div>
           <a class="upnext-card" href="/streaker.html">
