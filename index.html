@@ -92,7 +92,7 @@
     .results-hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.035) 39px,rgba(255,255,255,.035) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,.035) 39px,rgba(255,255,255,.035) 40px)}
     .results-day{font-size:9px;font-weight:700;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,.4);position:relative}
     .results-tier{font-family:var(--font-d);font-size:52px;letter-spacing:5px;color:var(--white);position:relative;line-height:1}
-    .results-tagline{font-size:13px;font-weight:600;font-style:italic;letter-spacing:1px;color:rgba(255,255,255,.55);position:relative}
+    .results-tagline{font-size:12px;font-weight:600;font-style:italic;letter-spacing:.5px;color:rgba(255,255,255,.55);position:relative;white-space:nowrap}
     .results-score{font-family:var(--font-d);font-size:26px;letter-spacing:4px;color:rgba(255,255,255,.8);position:relative}
     .emoji-strip{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;position:relative}
     .emoji-strip span{font-size:22px}
@@ -514,7 +514,7 @@ function render() {
         <div class="results-hero">
           <div class="results-day">YouKnowBall.io · Daily Game #${dayNum}</div>
           <div class="results-tier" style="${tierStyle}">${overall.name}</div>
-          <div class="results-tagline">"${overall.line}"</div>
+          <div class="results-tagline">${overall.line}</div>
           <div class="results-score">${correct}/${PLAYERS_PER_DAY} Correct</div>
           <div class="emoji-strip">${results.map(r => `<span>${r.tier.emoji}</span>`).join("")}</div>
           <div class="rank-teaser" id="rankTeaser"><div class="rank-loading">Checking your rank…</div></div>
