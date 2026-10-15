@@ -103,6 +103,10 @@
     .result-name{font-family:var(--font-h);font-size:15px;font-weight:900;text-transform:uppercase;color:var(--white);letter-spacing:.5px}
     .result-college{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-top:2px}
     .result-tier-badge{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:right}
+    .rank-teaser{margin:14px 0 4px}
+    .rank-loading{text-align:center;color:#555;font-size:11px;letter-spacing:3px;text-transform:uppercase}
+    .btn-rank{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#161616;border:1.5px solid var(--red);border-radius:12px;padding:16px;font-family:var(--font-d);font-size:15px;letter-spacing:2px;color:var(--white);text-decoration:none;text-transform:uppercase}
+    .btn-rank b{color:var(--red);font-size:22px}
     .board-line{margin:10px 0 2px;text-align:center;font-size:12px;letter-spacing:1px;color:#777}
     .board-line b{color:#ddd}
     .btn-share{width:100%;background:var(--red);border:none;border-radius:12px;padding:18px;font-family:var(--font-d);font-size:20px;letter-spacing:4px;text-transform:uppercase;color:var(--white);cursor:pointer;transition:all .15s}
@@ -327,6 +331,23 @@ async function autoSubmitScore(correct, overall) {
   } catch (e) { /* leaderboard is best-effort; the game result stands */ }
 }
 
+async function loadRankTeaser(correct) {
+  const el = document.getElementById("rankTeaser");
+  if (!el) return;
+  try {
+    const { data, error } = await sb.from("game_scores")
+      .select("score").eq("day_number", dayNum).is("game_type", null).limit(5000);
+    if (error) throw error;
+    const scores = (data || []).map(r => r.score);
+    scores.push(correct); // include this run (covers previews, where writes are skipped)
+    const rank = 1 + scores.filter(s => s > correct).length;
+    const total = scores.length;
+    el.innerHTML = `<a class="btn-rank" href="/leaderboard.html#daily">You're <b>#${rank}</b> of ${total} today <span>→</span></a>`;
+  } catch (e) {
+    el.innerHTML = `<a class="btn-rank" href="/leaderboard.html#daily">View today's leaderboard <span>→</span></a>`;
+  }
+}
+
 
 const TIERS = [
   { emoji:"🟩",       name:"SAVANT",  color:"#22c55e", match:(h,c)=> c && h===0 },
@@ -496,6 +517,7 @@ function render() {
           <div class="results-tagline">"${overall.line}"</div>
           <div class="results-score">${correct}/${PLAYERS_PER_DAY} Correct</div>
           <div class="emoji-strip">${results.map(r => `<span>${r.tier.emoji}</span>`).join("")}</div>
+          <div class="rank-teaser" id="rankTeaser"><div class="rank-loading">Checking your rank…</div></div>
         </div>
         <div class="result-list">
           ${results.map(r => `
@@ -538,6 +560,7 @@ function render() {
       </div>`;
     document.getElementById("shareBtn").addEventListener("click", handleShare);
     document.getElementById("renameHandle")?.addEventListener("click", renameHandle);
+    loadRankTeaser(results.filter(r => r.correct).length);
     return;
   }
 
